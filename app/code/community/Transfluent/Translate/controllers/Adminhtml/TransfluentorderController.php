@@ -98,7 +98,7 @@ class Transfluent_Translate_Adminhtml_TransfluentorderController extends Mage_Ad
             return false;
         }
 
-        $instructions = $this->getRequest()->getParam('instructions') ? : '';
+        $instructions = $this->getRequest()->getParam('instructions') ? $this->getRequest()->getParam('instructions') : '';
         $level = intval($this->getRequest()->getParam('level'));
         $store_from_id = intval($this->getRequest()->getParam('from_store'));
         $store_to_id = intval($this->getRequest()->getParam('to_store'));
@@ -387,15 +387,158 @@ class Transfluent_Translate_Adminhtml_TransfluentorderController extends Mage_Ad
         }
     }
 
-    public function getquoteAction() {
-        $this->_initAction();
+    public function orderByCategoryStep5Action($init_layout = true) {
+        if ($init_layout) {
+            $this->_initAction();
+        }
+
+        /** @var Transfluent_Translate_Model_Base_Backendclient $translate */
+        $translate = Mage::getModel('transfluenttranslate/base_backendclient');
+        $quote_id = $this->getRequest()->getParam('quote_id');
+        $instructions = $this->getRequest()->getParam('instructions');
+
+        $data = $translate->OrderCategoryQuote($quote_id, $instructions);
+        if (!$data || $data['status'] != 'OK') {
+            $this->getLayout()->getMessagesBlock()->addError('Failed to place the order. Error: ' . @$data['error']['message']);
+            $this->orderByCategoryStep3Action(false);
+            return;
+        }
+
+        /*
+        if (!isset($data['response']['status_code']) || $data['response']['status_code'] != 3) {
+            $this->getLayout()->getMessagesBlock()->addError('Something unexpected happened while processing the order. Please contact support@transfluent.com to resolve the situation.');
+            $this->orderByCategoryStep3Action(false);
+            return;
+        }*/
 
         $this->_addContent(
             $this
                 ->getLayout()
                 ->createBlock('transfluenttranslate/adminhtml_transfluentorder')
-                ->setTemplate('transfluent/order/order.phtml')
+                ->setTemplate('transfluent/order/category_step5.phtml')->setData('fork_id', $data['response'])->setData('quote_id', $quote_id)
         );
+        $this->renderLayout();
+    }
+
+    public function orderByCategoryStep4Action($init_layout = true) {
+        if ($init_layout) {
+            $this->_initAction();
+        }
+
+        $this->_addContent(
+            $this
+                ->getLayout()
+                ->createBlock('transfluenttranslate/adminhtml_transfluentorder')
+                ->setTemplate('transfluent/order/category_step4.phtml')
+        );
+        $this->renderLayout();
+    }
+
+    public function orderByCategoryStep1Action($init_layout = true) {
+        if ($init_layout) {
+            $this->_initAction();
+        }
+
+        if (!Mage::getStoreConfig('transfluenttranslate/account/token')) {
+            $login_url = Mage::helper("adminhtml")->getUrl("adminhtml/system_config/edit", array('section' => 'transfluenttranslate'));
+            $this->getLayout()->getMessagesBlock()->addError('Please login or create an account <a href="' . $login_url . '">first</a>!');
+        }
+        $this->_addContent(
+            $this
+                ->getLayout()
+                ->createBlock('transfluenttranslate/adminhtml_transfluentorder')
+                ->setTemplate('transfluent/order/category_step1.phtml')
+        );
+        $this->renderLayout();
+    }
+
+    public function orderByCategoryStep2Action() {
+        $this->_initAction();
+
+        $target = $this->getRequest()->getParam('target');
+        if (!$target) {
+            $this->getLayout()->getMessagesBlock()->addError('Please select a target language&store for translations!');
+            $this->orderByCategoryStep1Action(false);
+            return;
+        }
+        $source = $this->getRequest()->getParam('source');
+        if ($source == $target) {
+            $this->getLayout()->getMessagesBlock()->addError('You can not translate into the source store as each store may have only one locale. You need a pair of stores in different languages, please refer our getting started guide for Magento to do that.');
+            $this->orderByCategoryStep1Action(false);
+            return;
+        }
+        $source_store = Mage::app()->getStore($source);
+        $target_store = Mage::app()->getStore($target);
+        if ($source_store->getRootCategoryId() != $target_store->getRootCategoryId()) {
+            $this->getLayout()->getMessagesBlock()->addError('The source store and target store MUST have a common root category!');
+            $this->orderByCategoryStep1Action(false);
+            return;
+        }
+
+        $this->_addContent(
+            $this
+                ->getLayout()
+                ->createBlock('transfluenttranslate/adminhtml_transfluentorder')
+                ->setTemplate('transfluent/order/category_step2.phtml')
+        );
+        $this->renderLayout();
+    }
+
+    public function orderByCategoryStep3Action($init_layout = true) {
+        /** @var Transfluent_Translate_Model_Base_Backendclient $translate */
+        $translate = Mage::getModel('transfluenttranslate/base_backendclient');
+        $quote_id = $this->getRequest()->getParam('quote_id');
+
+        if ($quote_id && $this->getRequest()->getParam('isAjax')) {
+            $data = $translate->GetCategoryQuote($quote_id);
+            $this->getResponse()
+                ->setBody(
+                    Mage::helper('core')->jsonEncode($data['response']))
+                ->setHttpResponseCode(200)
+                ->setHeader('Content-type', 'application/json', true);
+            return;
+        }
+
+        if ($init_layout) {
+            // Preserve any pre-generated errors
+            $this->_initAction();
+        }
+
+        $target = $this->getRequest()->getParam('target');
+        $source = $this->getRequest()->getParam('source');
+        $source_store = Mage::app()->getStore($source);
+        $target_store = Mage::app()->getStore($target);
+        $level = $this->getRequest()->getParam('level');
+        $collision_strategy = $this->getRequest()->getParam('collision');
+
+        $categories = $this->getRequest()->getParam('chk_group');
+        if (empty($categories)) {
+            $this->getLayout()->getMessagesBlock()->addError('Please select at least one category!');
+            $this->orderByCategoryStep2Action(false);
+            return;
+        }
+
+        if (!$quote_id) {
+            /** @var Transfluent_Translate_Helper_Languages $languageHelper */
+            $languageHelper = Mage::helper('transfluenttranslate/languages');
+            $source_store_locale_code = $languageHelper->GetStoreLocale($source_store->getCode());
+            $target_store_locale_code = $languageHelper->GetStoreLocale($target_store->getCode());
+            $data = $translate->CreateCategoryQuote($source, $source_store_locale_code, $target, $target_store_locale_code, $level, $collision_strategy, $this->getRequest()->getParam('chk_group'));
+        }
+
+        $block = $this->getLayout()->createBlock('transfluenttranslate/adminhtml_transfluentorder')->setTemplate('transfluent/order/category_step3.phtml');
+
+        if (!$quote_id && $data['status'] == 'ERROR') {
+            $block->setData('quote_id', null);
+            $this->getLayout()->getMessagesBlock()->addError($data['error']['message']);
+        } else if (!$quote_id) {
+            $quote_id = $data['response'];
+            $block->setData('quote_id', $quote_id);
+        } else {
+            $block->setData('quote_id', $quote_id);
+        }
+
+        $this->_addContent($block);
         $this->renderLayout();
     }
 

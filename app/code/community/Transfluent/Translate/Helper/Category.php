@@ -82,39 +82,46 @@ class Transfluent_Translate_Helper_Category extends Mage_Core_Helper_Abstract {
     /**
      *  get checkbox html of categories
      *
+     * @param array - category ids
+     * @param array
      * @return string
      */
-    public function getCategoriesHTML() {
-        $category_ids = $this->getCategoryIdsArray();
-        $html = $this->categoryArrayToHtml($category_ids);
+    public function getCategoriesHTML($category_ids = null, $selected_ids = array()) {
+        if (is_null($category_ids)) {
+            $category_ids = $this->getCategoryIdsArray();
+        }
+        $visited = array();
+        $html = $this->categoryArrayToHtml($category_ids, $visited, $selected_ids);
         return $html;
     }
 
     /**
-     * @param $categories
+     * @param array
+     * @param array
+     * @param array
      * @return string
      */
-    private function categoryArrayToHtml($category_ids, &$visited = array()) {
+    private function categoryArrayToHtml($category_ids, &$visited = array(), $selected_ids = array()) {
         ini_set('memory_limit', '128M');
         set_time_limit(0);
 
         $html = "<ul style=\"margin-left: 15px\">";
-        foreach ($category_ids AS $cateogry_id) {
-            if (in_array($cateogry_id, $visited)) continue;
-            $visited[] = $cateogry_id;
+        foreach ($category_ids AS $category_id) {
+            if (in_array($category_id, $visited)) continue;
+            $visited[] = $category_id;
             /** @var Mage_Catalog_Model_Category $cat */
             $cat = Mage::getModel('catalog/category');
-            $cat->load($cateogry_id);
+            $cat->load($category_id);
             if (!$cat->getName()) {
                 continue;
             }
             $html .= "<li>";
-            $html .= "<label><input type='checkbox' name='chk_group[]' value=" . $cateogry_id . " /> " . $cat->getName()
-                . " (" . $cat->getProductCount() . ")" . "<br>";
+            $html .= "<label><input type='checkbox' name='chk_group[]' " . (in_array($category_id, $selected_ids) ? 'checked="checked"' : '') . " value=" . $category_id . " /> " . $cat->getName() . '<br>';
+                //. " (" . $cat->getProductCount() . ")" . "<br>";
 
             $cat_children_ids = $cat->getAllChildren(true);
             if (!empty($cat_children_ids)) {
-                $html .= $this->categoryArrayToHtml($cat_children_ids, $visited);
+                $html .= $this->categoryArrayToHtml($cat_children_ids, $visited, $selected_ids);
             }
             unset($cat_children_ids);
 

@@ -1,0 +1,57 @@
+<?php
+/** @var Transfluent_Translate_Helper_Languages $languageHelper */
+$languageHelper = Mage::helper('transfluenttranslate/languages');
+
+$fork_id = $this->getData('fork_id');
+$quote_id = $this->getData('quote_id');
+?>
+
+    <div class="content-header">
+        <h3 class="icon-head head-products"><?= $languageHelper->__('Order translations by category') ?></h3>
+    </div>
+
+    <div style="padding: 1rem; color: #ccc; margin-top: -1rem;">
+        <span style="color: #666;">1. Choose source&amp;target</span> &gt; <span style="color: #666;">2. Choose categories</span> &gt; <span style="color: #666;">3. Get a quote</span> &gt; <strong style="color: black;">4. Order!</strong>
+    </div>
+
+    <div class="entry-edit" style="width: 33%; min-width: 550px;">
+        <div class="entry-edit-head">
+                <h4 class="icon-head head-edit-form fieldset-legend">Order</h4>
+                <div class="form-buttons"></div>
+            </div>
+            <div class="fieldset " id="base_fieldset">
+                <input type="hidden" name="quote_id" id="quote_id" value="<?=$quote_id?>">
+                <div id="quote_canvas" style="margin-bottom: 1rem;">
+                    Loading..
+                </div>
+                <div class="hor-scroll" id="thanks" style="display: none;">
+                    <h2>Thank you!</h2>
+                    <p>Your order has been successfully placed. The ordered items and their progress are shown in <!-- &quot;<a href="<?=$this->getUrl('transfluent/adminhtml_transfluenttranslate/index')?>">Translations</a>&quot; section in Magento and under--> &quot;<a href="https://www.transfluent.com/my-account/" target="_blank">My Account</a>&quot; on our website.</p>
+                </div>
+            </div>
+        </div>
+<script>
+    var PollFunction = function() {
+        new Ajax.Request('<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderByCategoryStep3')?>', {
+            parameters: {quote_id: $F('quote_id')},
+            onSuccess: function (xhr) {
+                var response = xhr.responseJSON;
+                $('quote_canvas').update(response.status);
+                switch (response.status_code) {
+                    case "4":
+                        setTimeout(PollFunction, 2500);
+                        break;
+                    case "3":
+                        $('thanks').show();
+                        $('quote_canvas').hide();
+                        break;
+                    default:
+                        alert('Something unexpected happened while processing the order. Please contact support@transfluent.com to resolve the situation.');
+                        break;
+                }
+            }
+        });
+    };
+    document.observe("dom:loaded", PollFunction);
+</script>
+

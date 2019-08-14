@@ -147,7 +147,7 @@ class Transfluent_Translate_Adminhtml_TransfluenttranslateController extends Mag
         }
 
         $e = new Transfluent_Translate_Exception_ETransfluentUnknownErrorNoEstimateBase();
-        $error_msg = $error_msg ? : $e->getMessage();
+        $error_msg = $error_msg ? $error_msg : $e->getMessage();
         $this->_outputErrorJson($error_msg);
         return false;
     }

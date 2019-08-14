@@ -1,0 +1,128 @@
+<?php
+/** @var Transfluent_Translate_Helper_Languages $languageHelper */
+$languageHelper = Mage::helper('transfluenttranslate/languages');
+
+/** @var Transfluent_Translate_Helper_Category $categoryHelper */
+$categoryHelper = Mage::helper('transfluenttranslate/category');
+
+$target = $this->getRequest()->getParam('target');
+$source = $this->getRequest()->getParam('source');
+$level = $this->getRequest()->getParam('level');
+$collision_strategy = $this->getRequest()->getParam('collision');
+$categories = $this->getRequest()->getParam('chk_group');
+$instructions = $this->getRequest()->getParam('instructions') ? $this->getRequest()->getParam('instructions') : '';
+
+$source_store = Mage::app()->getStore($source);
+
+$quote_id = $this->getData('quote_id') ? $this->getData('quote_id') :  $this->getRequest()->getParam('quote_id');
+
+?>
+
+    <div class="content-header">
+        <h3 class="icon-head head-products"><?= $languageHelper->__('Order translations by category') ?></h3>
+    </div>
+
+    <div style="padding: 1rem; color: #ccc; margin-top: -1rem;">
+        <span style="color: #666;">1. Choose source&amp;target</span> &gt; <span style="color: #666;">2. Choose categories</span> &gt; <strong style="color: black;">3. Get a quote</strong> &gt; 4. Order!
+    </div>
+
+    <div class="entry-edit" style="width: 33%; min-width: 550px;">
+        <form action="<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderByCategoryStep3')?>" method="post" id="edit_form"><div><input name="form_key" type="hidden" value="<?=Mage::getSingleton('core/session')->getFormKey()?>"></div><div class="entry-edit-head">
+                <h4 class="icon-head head-edit-form fieldset-legend">Get a quote</h4>
+                <div class="form-buttons"></div>
+            </div>
+            <div class="fieldset " id="base_fieldset">
+                <div class="hor-scroll">
+                    <input type="hidden" name="source" id="source" value="<?=$source?>">
+                    <input type="hidden" name="target" id="target" value="<?=$target?>">
+                    <input type="hidden" name="level" id="level" value="<?=$level?>">
+                    <input type="hidden" name="quote_id" id="quote_id" value="<?=$quote_id?>">
+                    <input type="hidden" name="collision" id="collision" value="<?=$collision_strategy?>">
+                    <?php
+                    foreach ($categories AS $category_id) {
+                        ?><input type="hidden" name="chk_group[]" value="<?=$category_id?>"><?php
+                    }
+                    ?>
+
+                    <?php
+                    // @todo: AUTOMATIC XHR STATUS POLL LOOP
+                    // @todo: Show control to pick which fields to translate etc.
+                    ?>
+
+                    <div id="quote_canvas" style="margin-bottom: 1rem;">
+                        Loading..
+                    </div>
+
+                    <div id="quote_fields" style="margin-bottom: 1rem; display: none;">
+                        <?php // @todo: Allow to change fields to translate ?>
+                    </div>
+
+                    <div id="quote_instructions" style="margin-top: 2rem; margin-bottom: 1rem; display: none;">
+                        <label><strong>Instructions to translators (e.g. translation tone, target audience etc.)</strong><br>
+                        <textarea name="instructions" rows="4" cols="75"><?=htmlspecialchars($instructions)?></textarea></label><br>
+                    </div>
+
+                    <div style="margin-right: 33%;">
+                        <button title="Back" type="button" class="scalable" onclick="$(this).up('form').writeAttribute('action', '<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderByCategoryStep2')?>').submit(); return false;">Back</button>
+                        <button title="Refresh" id="quote_refresh_btn" type="submit" class="scalable save">Refresh</button>
+                        <button title="Order" id="quote_order_btn" type="submit" class="scalable save" onclick="OrderClick(this); return false;" disabled="disabled">Order</button>
+                    </div>
+
+                    <p style="margin-top: 1.5rem;">
+                        <i class="link-store-scope"></i> Please note that following product fields are translated: name, description and short description. Choosing the fields to be translated is possible in next release of this extension.
+                    </p>
+                </div>
+            </div>
+        </form></div>
+
+<script>
+    function OrderClick(element) {
+        if (!confirm('Are you sure?')) {
+            return;
+        }
+        //$(element).up('form').writeAttribute('action', '<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderByCategoryStep4')?>').submit(); // @todo: Restore once translate_fields -selection is implemented
+        $(element).up('form').writeAttribute('action', '<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderByCategoryStep5')?>').submit();
+    }
+
+    document.observe("dom:loaded", function() {
+        var instructions_box = $('quote_instructions');
+        var order_btn = $('quote_order_btn');
+        order_btn.hide();
+        var refresh_btn = $('quote_refresh_btn');
+        refresh_btn.hide();
+        var PollerFunction = function() {
+            new Ajax.Request('<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderByCategoryStep3')?>', {
+                parameters: {quote_id: $F('quote_id')},
+                onSuccess: function (xhr) {
+                    var response = xhr.responseJSON;
+                    $('quote_canvas').update(response.status);
+                    switch (response.status_code) {
+                        case "0":
+                        case "1":
+                            refresh_btn.show();
+                            setTimeout(PollerFunction, 2500);
+                            break;
+                        case "2":
+                            order_btn.show().removeAttribute('disabled');
+                            refresh_btn.hide();
+                            instructions_box.show();
+                            // response.translate_fields_available vs. translate_fields
+                            break;
+                        case "3":
+                            order_btn.hide();
+                            instructions_box.hide();
+                            break;
+                        default:
+                            order_btn.hide();
+                            refresh_btn.show();
+                            instructions_box.hide();
+                            break;
+                    }
+                }
+            });
+        };
+        PollerFunction();
+
+    });
+</script>
+

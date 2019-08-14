@@ -17,6 +17,155 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
         "/store\-([0-9]{1,})\-category\-([0-9]{1,})\-meta\-description/" => '_saveCategoryMetaDescription',
     );
 
+    private function serveRequest($payload) {
+        $status = true;
+        if ($payload instanceof Exception) {
+            $payload = array(
+                'status' => 'ERROR',
+                'error' => array(
+                    'type' => get_class($payload),
+                    'message' => $payload->getMessage()
+                )
+            );
+            $status = false;
+        }
+        $this->getResponse()
+            ->setBody(
+                Mage::helper('core')->jsonEncode($payload))
+            ->setHttpResponseCode($status === true ? 200 : 400)
+            ->setHeader('Content-type', 'application/json', true);
+    }
+
+    public function getProductIdsAction() {
+        try {
+            $this->_validateToken();
+
+            $category_id = $this->getRequest()->getParam('category_id');
+            $store = $this->getRequest()->getParam('store');
+            /** @var Mage_Catalog_Model_Category $cat */
+            $cat = Mage::getModel('catalog/category');
+            $cat->load($category_id);
+            $product_ids = array();
+            if ($cat->getProductCount() > 0) {
+                $model = Mage::getModel('catalog/product')->setStoreId($store);
+                /** @var Mage_Catalog_Model_Resource_Product_Collection $products */
+                $products = $model->getCollection();
+                $products->addStoreFilter($store);
+                $products->addCategoryFilter($cat);
+                $product_ids = $products->getAllIds();
+            }
+            $response = array(
+                'products' => $product_ids
+            );
+        } catch (Exception $e) {
+            $response = $e;
+        }
+        $this->serveRequest($response);
+    }
+
+    public function getProductDetailsAction() {
+        try {
+            $this->_validateToken();
+            $product_ids_str = $this->getRequest()->getParam('product_ids');
+            $product_fields_str = $this->getRequest()->getParam('translate_fields');
+            $collision = $this->getRequest()->getParam('collision');
+            $product_ids = explode(",", $product_ids_str);
+            $product_fields = explode(",", $product_fields_str);
+            $target_store_id = $this->getRequest()->getParam('target_store');
+            $source_store_id = $this->getRequest()->getParam('source_store');
+            $product_model = Mage::getModel('catalog/product');
+            /** @var Mage_Catalog_Model_Product $model */
+
+            $available_fields = array();
+            $products_out = array();
+            foreach ($product_ids AS $product_id) {
+                $product = $product_model->setStoreId($target_store_id)->load($product_id);
+                if (!$product) {
+                    continue;
+                }
+                /** @var Mage_Catalog_Model_Product $product */
+                if (empty($available_fields)) {
+                    $available_fields = array_keys($product->getData());
+                }
+
+                $product_data = array("id" => $product_id);
+                foreach ($product_fields AS $product_field) {
+                    if ($product->getExistsStoreValueFlag($product_field)) {
+                        if ($collision == 'translated') {
+                            // Skip value: assume it has been already translated
+                            continue;
+                        } else if ($collision == 'overwrite') {
+                            // Delete: Overwrite store specific values with new translations
+                            $master_product = $product_model->setStoreId($source_store_id)->load($product_id);
+                            $product_data[$product_field] = $master_product->getData($product_field);
+                            continue;
+                        }
+                    }
+                    $product_data[$product_field] = $product->getData($product_field);
+                }
+                $products_out[] = $product_data;
+            }
+
+            $response = array(
+                'product_details' => $products_out,
+                'available_fields' => $available_fields
+            );
+        } catch (Exception $e) {
+            $response = $e;
+        }
+        $this->serveRequest($response);
+    }
+
+    public function getCategoriesAction() {
+        try {
+            $this->_validateToken();
+
+            $category_ids_str = $this->getRequest()->getParam('category_ids');
+            $category_ids = explode(",", $category_ids_str);
+
+            $categories_out = array();
+            $ExtractCategoryData = function($category_id, $parent_cat_id = null) use (&$ExtractCategoryData, &$categories_out) {
+                /** @var Mage_Catalog_Model_Category $cat */
+                $cat = Mage::getModel('catalog/category');
+                $cat->load($category_id);
+
+                $categories_out[$category_id] = array(
+                    'name' => $cat->getName(),
+                    'product_count' => $cat->getProductCount(),
+                );
+                if ($parent_cat_id) {
+                    $categories_out[$category_id]['parent_id'] = $category_id;
+                }
+                $cat_children_ids = $cat->getAllChildren(true);
+                foreach ($cat_children_ids AS $cat_children_id) {
+                    if ($cat_children_id == $category_id) {
+                        continue;
+                    }
+                    $ExtractCategoryData($cat_children_id, $category_id);
+                }
+            };
+
+            foreach ($category_ids AS $category_id) {
+                $ExtractCategoryData($category_id);
+            }
+
+            $response = array(
+                'categories' => $categories_out
+            );
+        } catch (Exception $e) {
+            $response = $e;
+        }
+        $this->serveRequest($response);
+    }
+
+    public function pingAction() {
+        $this->getResponse()
+            ->setBody(
+                Mage::helper('core')->jsonEncode(array("time" => time())))
+            ->setHttpResponseCode(200)
+            ->setHeader('Content-type', 'application/json', true);
+    }
+
     public function saveAction() {
         try {
             $this->_validateToken();
@@ -305,7 +454,7 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
         /** @var Mage_Catalog_Model_Product_Action $product_action */
         $product_action->updateAttributes(
             array($product_id),
-            array((string)$field_name => $payload['text'] ? : ''),
+            array((string)$field_name => ($payload['text'] ? $payload['text'] : '')),
             $store_id);
 
         return $this->_updateOrder($store_id, $text_id, $payload['level']);
@@ -319,9 +468,9 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
             /** @var Transfluent_Translate_Model_Mysql4_Transfluenttranslate_Collection $order */
             $order->setDataToAll('status', 2);
             $order->save();
-        } else {
+        }/* else {
             throw new Transfluent_Translate_Exception_EFailedToUpdateOrder();
-        }
+        }*/
         return true;
     }
 }

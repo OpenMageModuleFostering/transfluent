@@ -122,12 +122,14 @@ class Transfluent_Translate_Model_Base_Backendclient extends Mage_Adminhtml_Cont
     }
 
     public function Logout() {
-        // @todo: Notify API about logout
         return $this->SaveConfiguration(null, null);
     }
 
-    public function Authenticate($e, $p) {
-        $response = $this->Request(__FUNCTION__, 'POST', array('email' => $e, 'password' => $p));
+    public function Authenticate($email, $password) {
+        $extension_callback_endpoint = Mage::getUrl('transfluenttranslate/');
+        $version = Mage::getVersion();
+        $payload = array('email' => $email, 'password' => $password, 'magento_ver' => $version, 'magento_url' => $extension_callback_endpoint);
+        $response = $this->Request(__FUNCTION__, 'POST', $payload);
         $message = array();
         if (!$response['response']['token']) {
             throw new Exception('Could not authenticate with API!');
@@ -138,8 +140,8 @@ class Transfluent_Translate_Model_Base_Backendclient extends Mage_Adminhtml_Cont
         } else {
             $token = $response['response']['token'];
             $this->token = $token;
-            $this->email = $e;
-            $this->SaveConfiguration($e, $token);
+            $this->email = $email;
+            $this->SaveConfiguration($email, $token);
             $message['status'] = 'ok';
             $message['message'] = 'You have successfully connected to Transfluent.com';
             $session = Mage::getSingleton('core/session');
@@ -163,8 +165,52 @@ class Transfluent_Translate_Model_Base_Backendclient extends Mage_Adminhtml_Cont
         return $this->CallApi(__FUNCTION__, self::HTTP_GET, array('name' => 'tests'));
     }
 
+    public function GetCategoryQuote($quote_id) {
+        $payload = array(
+            'id' => $quote_id,
+            'token' => $this->token
+        );
+        return $this->CallApi('magento/quote', self::HTTP_GET, $payload);
+    }
+
+    public function OrderCategoryQuote($quote_id, $instructions) {
+        $payload = array(
+            'id' => $quote_id,
+            'token' => $this->token,
+            'order' => true,
+            'method' => 'PUT',
+            '__fork' => 1
+        );
+        return $this->CallApi('magento/quote', self::HTTP_POST, $payload);
+    }
+
+    public function CreateCategoryQuote($source_store, $source_language, $target_store, $target_language, $level, $collision_strategy, $category_ids, $translate_fields = null) {
+        $extension_callback_endpoint = Mage::getUrl('transfluenttranslate/');
+        $version = Mage::getVersion();
+        $payload = array(
+            'magento_ver' => $version,
+            'magento_url' => $extension_callback_endpoint,
+            'source_store' => $source_store,
+            'source_language' => $source_language,
+            'target_store' => $target_store,
+            'target_language' => $target_language,
+            'level' => $level,
+            'collision' => $collision_strategy,
+            'category_ids' => '[' . implode(",", $category_ids) . ']',
+            'token' => $this->token,
+            'hash' => md5($this->token)
+        );
+        if (!is_null($translate_fields)) {
+            $payload['translate_fields'] = $translate_fields;
+        }
+        return $this->CallApi('magento/quote', self::HTTP_POST, $payload);
+    }
+
     public function CreateAccount($email, $terms) {
-        $res = $this->CallApi(__FUNCTION__, self::HTTP_GET, array('email' => $email, 'terms' => $terms));
+        $extension_callback_endpoint = Mage::getUrl('transfluenttranslate/');
+        $version = Mage::getVersion();
+        $payload = array('email' => $email, 'terms' => $terms, 'magento_ver' => $version, 'magento_url' => $extension_callback_endpoint);
+        $res = $this->CallApi(__FUNCTION__, self::HTTP_GET, $payload);
         if ($res['status'] == "OK") {
             $this->SaveConfiguration($email, $res['response']['token']);
             $session = Mage::getSingleton('core/session');

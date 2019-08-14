@@ -13,7 +13,7 @@ class Transfluent_Translate_Block_Adminhtml_Transfluentorder extends Mage_Adminh
         $this->removeButton('add');
         $this->addButton('order_reorder', array(
             'label' => Mage::helper('sales')->__('Get Quote'),
-            'onclick' => 'setLocation(\'' . $this->getUrl('transfluent/adminhtml_transfluentorder/getquote') . '\')',));
+            'onclick' => 'setLocation(\'' . $this->getUrl('transfluent/adminhtml_transfluentorder/orderByCategoryStep1') . '\')',));
 
         //$this->removeButton('save');
         $this->_updateButton('save', 'label', 'Place order');

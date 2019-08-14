@@ -1,0 +1,52 @@
+<?php
+/** @var Transfluent_Translate_Helper_Languages $languageHelper */
+$languageHelper = Mage::helper('transfluenttranslate/languages');
+
+/** @var Transfluent_Translate_Helper_Category $categoryHelper */
+$categoryHelper = Mage::helper('transfluenttranslate/category');
+
+$target = $this->getRequest()->getParam('target');
+$source = $this->getRequest()->getParam('source');
+$level = $this->getRequest()->getParam('level');
+$collision_strategy = $this->getRequest()->getParam('collision');
+$categories = $this->getRequest()->getParam('chk_group');
+
+$source_store = Mage::app()->getStore($source);
+?>
+
+<div class="content-header">
+    <h3 class="icon-head head-products"><?= $languageHelper->__('Order translations by category') ?></h3>
+</div>
+
+    <div style="padding: 1rem; color: #ccc; margin-top: -1rem;">
+        <span style="color: #666;">1. Choose source&amp;target</span> &gt; <strong style="color: black;">2. Choose categories</strong> &gt; 3. Get quote &gt; 4. Order!
+    </div>
+
+    <div class="entry-edit" style="width: 33%; min-width: 550px;">
+        <form action="<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderByCategoryStep3')?>" method="post" id="edit_form"><div><input name="form_key" type="hidden" value="<?=Mage::getSingleton('core/session')->getFormKey()?>"></div><div class="entry-edit-head">
+                <h4 class="icon-head head-edit-form fieldset-legend">Select categories to translate content from</h4>
+                <div class="form-buttons"></div>
+            </div>
+            <input type="hidden" name="source" value="<?=$source?>">
+            <input type="hidden" name="target" value="<?=$target?>">
+            <input type="hidden" name="level" value="<?=$level?>">
+            <input type="hidden" name="collision" value="<?=$collision_strategy?>">
+            <div class="fieldset " id="base_fieldset">
+                <div class="hor-scroll">
+
+                    <div style="margin-left: 20px;">
+                        <?php
+                        print $categoryHelper->getCategoriesHTML(array($source_store->getRootCategoryId()), array_values($categories ? $categories : array()));
+                        ?>
+                    </div>
+                    <div style="text-align: right; margin-right: 33%;">
+                        <button title="Back" type="button" class="scalable" onclick="$(this).up('form').writeAttribute('action', '<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderByCategoryStep1')?>').submit(); return false;">Back</button>
+                        <button title="Next" type="submit" class="scalable save">Next</button>
+                    </div>
+
+                    <p style="margin-top: 1.5rem;">
+                        <i class="link-store-scope"></i> Please note: Selecting a higher level category will include all products from subcategories, regardless if subcategories have been checked or not
+                    </p>
+                </div>
+            </div>
+        </form></div>
