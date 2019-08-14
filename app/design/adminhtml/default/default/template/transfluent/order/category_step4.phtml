@@ -29,7 +29,7 @@ $quote_id = $this->getData('quote_id');
     <div style="padding: 1rem; color: #ccc; margin-top: -1rem;">
         <span style="color: #666;">1. Choose source&amp;target</span> &gt; <span style="color: #666;">2. Choose categories</span> &gt; <span style="color: #666;">3. Get a quote</span> &gt; <strong style="color: black;">4. Order!</strong>
     </div>
-
+<!--
     <div class="entry-edit" style="width: 33%; min-width: 550px;">
         <form action="<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderByCategoryStep5')?>" method="post" id="edit_form"><div><input name="form_key" type="hidden" value="<?=Mage::getSingleton('core/session')->getFormKey()?>"></div><div class="entry-edit-head">
                 <h4 class="icon-head head-edit-form fieldset-legend">Order</h4>
@@ -51,9 +51,10 @@ $quote_id = $this->getData('quote_id');
                     TBD: Confirm order + place actual order req.!
 
                     <div style="margin-right: 33%;">
-                        <button title="Back" type="button" class="scalable" onclick="$(this).up('form').writeAttribute('action', '<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderByCategoryStep3')?>').submit(); return false;">Back</button>
+                        <button title="Back" type="button" class="scalable back" onclick="$(this).up('form').writeAttribute('action', '<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderByCategoryStep3')?>').submit(); return false;">Back</button>
                         <button title="Order" type="submit" class="scalable save">Order</button>
                     </div>
                 </div>
             </div>
         </form></div>
+-->

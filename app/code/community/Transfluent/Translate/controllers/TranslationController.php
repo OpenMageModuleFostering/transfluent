@@ -1,9 +1,5 @@
 <?php
 
-/**
- * Transfluent extension for Magento, (c) 2013, 1.1.1
- * Author: coders@transfluent.com
- */
 class Transfluent_Translate_TranslationController extends Mage_Core_Controller_Front_Action {
     private $_handlers = array(
         "/store\-([0-9]{1,})\-tag\-([0-9]{1,})/" => '_saveTagName',
@@ -43,7 +39,7 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
             $category_id = $this->getRequest()->getParam('category_id');
             $store = $this->getRequest()->getParam('store');
             /** @var Mage_Catalog_Model_Category $cat */
-            $cat = Mage::getModel('catalog/category');
+            $cat = Mage::getModel('catalog/category')->setStoreId($store);
             $cat->load($category_id);
             $product_ids = array();
             if ($cat->getProductCount() > 0) {
@@ -120,13 +116,14 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
         try {
             $this->_validateToken();
 
+            $store = $this->getRequest()->getParam('store');
             $category_ids_str = $this->getRequest()->getParam('category_ids');
             $category_ids = explode(",", $category_ids_str);
 
             $categories_out = array();
-            $ExtractCategoryData = function($category_id, $parent_cat_id = null) use (&$ExtractCategoryData, &$categories_out) {
+            $ExtractCategoryData = function($category_id, $parent_cat_id = null) use (&$ExtractCategoryData, &$categories_out, $store) {
                 /** @var Mage_Catalog_Model_Category $cat */
-                $cat = Mage::getModel('catalog/category');
+                $cat = Mage::getModel('catalog/category')->setStoreId($store);
                 $cat->load($category_id);
 
                 $categories_out[$category_id] = array(

@@ -66,7 +66,7 @@ $quote_id = $this->getData('quote_id') ? $this->getData('quote_id') :  $this->ge
                     </div>
 
                     <div style="margin-right: 33%;">
-                        <button title="Back" type="button" class="scalable" onclick="$(this).up('form').writeAttribute('action', '<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderByCategoryStep2')?>').submit(); return false;">Back</button>
+                        <button title="Back" type="button" class="scalable back" onclick="$(this).up('form').writeAttribute('action', '<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderByCategoryStep2')?>').submit(); return false;">Back</button>
                         <button title="Refresh" id="quote_refresh_btn" type="submit" class="scalable save">Refresh</button>
                         <button title="Update" name="update_quote_btn" value="Update quote" id="update_quote_btn" type="submit" class="scalable save" style="display: none;">Update quote</button>
                         <button title="Order" id="quote_order_btn" type="submit" class="scalable save" onclick="OrderClick(this); return false;" disabled="disabled">Order</button>

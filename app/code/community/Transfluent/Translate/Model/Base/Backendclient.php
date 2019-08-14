@@ -198,10 +198,12 @@ class Transfluent_Translate_Model_Base_Backendclient extends Mage_Adminhtml_Cont
 
     public function CreateCategoryQuote($source_store, $source_language, $target_store, $target_language, $level, $collision_strategy, $category_ids, $translate_fields = null) {
         $extension_callback_endpoint = Mage::getUrl('transfluenttranslate/');
+        $store_endpoint = Mage::app()->getStore($target_store)->getUrl('transfluenttranslate/'); // returns URL with ?___store=[STORE_CODE]
         $version = Mage::getVersion();
         $payload = array(
             'magento_ver' => $version,
             'magento_url' => $extension_callback_endpoint,
+            'magento_store_url' => $store_endpoint,
             'source_store' => $source_store,
             'source_language' => $source_language,
             'target_store' => $target_store,
