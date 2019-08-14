@@ -300,7 +300,7 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
                     'product_count' => $cat->getProductCount(),
                 );
                 if ($parent_cat_id) {
-                    $categories_out[$category_id]['parent_id'] = $category_id;
+                    $categories_out[$category_id]['parent_id'] = $parent_cat_id;
                 }
                 $cat_children_ids = $cat->getAllChildren(true);
                 foreach ($cat_children_ids AS $cat_children_id) {
@@ -329,6 +329,59 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
             ->setBody(
                 Mage::helper('core')->jsonEncode(array("time" => time())))
             ->setHttpResponseCode(200)
+            ->setHeader('Content-type', 'application/json', true);
+    }
+
+    public function getStoresAction() {
+        try {
+            $this->_validateToken();
+
+            $status = true;
+
+            $response = array('websites' => array());
+
+            foreach (Mage::app()->getWebsites() AS $website) {
+                /** @var Mage_Core_Model_Website $website */
+                $website_data = array(
+                    'id' => $website->getId(),
+                    'name' => $website->getName(),
+                    'code' => $website->getCode(),
+                );
+                foreach ($website->getGroups() AS $group) {
+                    /** @var Mage_Core_Model_Store_Group $group */
+                    $stores = $group->getStores();
+                    foreach ($stores AS $store) {
+                        /** @var Mage_Core_Model_Store $store */
+                        if (!isset($website_data['stores'])) {
+                            $website_data['stores'] = array();
+                        }
+                        $website_data['stores'][] = array(
+                            'id' => $store->getId(),
+                            'root_category' => $store->getRootCategoryId(),
+                            'code' => $store->getCode(),
+                            'base_url' => $store->getBaseUrl(),
+                            'name' => $store->getFrontendName(),
+                            'active' => $store->getIsActive() ? 'yes' : 'no',
+                        );
+                    }
+                }
+                $response['websites'][] = $website_data;
+            }
+        } catch (Exception $e) {
+            $response = array(
+                'status' => 'ERROR',
+                'error' => array(
+                    'type' => get_class($e),
+                    'message' => $e->getMessage()
+                )
+            );
+            $status = false;
+        }
+
+        $this->getResponse()
+            ->setBody(
+                Mage::helper('core')->jsonEncode($response))
+            ->setHttpResponseCode($status === true ? 200 : 500)
             ->setHeader('Content-type', 'application/json', true);
     }
 
