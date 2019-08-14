@@ -4,14 +4,18 @@
  * Class Transfluent_Translate_Helper_Category
  */
 class Transfluent_Translate_Helper_Category extends Mage_Core_Helper_Abstract {
-
     /**
-     * get categories
+     * Get ids for all categories
      *
+     * @param int|null Store id
      * @return array
      */
-    public function getCategoryIdsArray() {
+    public function getCategoryIdsArray($store_id = null) {
         $category = Mage::getModel('catalog/category');
+        /** @var Mage_Catalog_Model_Category $category */
+        if (!is_null($store_id)) {
+            $category->setStoreId($store_id);
+        }
         $tree = $category->getTreeModel();
         $tree->load();
         $ids = $tree->getCollection()->getAllIds();

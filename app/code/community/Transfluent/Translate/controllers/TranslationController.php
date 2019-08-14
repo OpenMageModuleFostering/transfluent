@@ -701,7 +701,46 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
             throw $e;
         }
 
+        $this->_ReplaceSourceStaticBlockIdsInCategories($source_store_id, $block->getId(), $target_store_id, $translated_block->getId());
+
         return true;
+    }
+
+    private function _ReplaceSourceStaticBlockIdsInCategories($source_store_id, $source_block_id, $target_store_id, $target_block_id, array $category_ids = null, array &$processed_category_ids = []) {
+        /** @var Transfluent_Translate_Helper_Category $categoryHelper */
+        $categoryHelper = Mage::helper('transfluenttranslate/category');
+        if (is_null($category_ids)) {
+            $category_ids = $categoryHelper->getCategoryIdsArray($target_store_id);
+        }
+
+        foreach ($category_ids AS $category_id) {
+            if (in_array($category_id, $processed_category_ids)) continue;
+            $processed_category_ids[] = $category_id;
+            /** @var Mage_Catalog_Model_Category $cat */
+            $cat = Mage::getModel('catalog/category');
+            $cat->setStoreId($target_store_id);
+            $cat->load($category_id);
+            if (!$cat->getName()) {
+                continue;
+            }
+
+            if (!in_array($cat->getDisplayMode(), array(Mage_Catalog_Model_Category::DM_MIXED, Mage_Catalog_Model_Category::DM_PAGE))) {
+                continue;
+            }
+            if ($cat->getLandingPage() == $source_block_id) {
+                $cat->setLandingPage($target_block_id);
+                try {
+                    $cat->save();
+                } catch (Exception $e) {
+                    throw $e;
+                }
+            }
+
+            $cat_children_ids = $cat->getAllChildren(true);
+            if (!empty($cat_children_ids)) {
+                $this->_ReplaceSourceStaticBlockIdsInCategories($source_store_id, $source_block_id, $target_store_id, $target_block_id, $cat_children_ids, $processed_category_ids);
+            }
+        }
     }
 
     private function _saveCmsPageDetails($matches, $payload, $text_id) {
