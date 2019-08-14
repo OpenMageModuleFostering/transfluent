@@ -816,7 +816,7 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
         return true;
     }
 
-    private function _ReplaceSourceStaticBlockIdsInCategories($source_store_id, $source_block_id, $target_store_id, $target_block_id, array $category_ids = null, array &$processed_category_ids = []) {
+    private function _ReplaceSourceStaticBlockIdsInCategories($source_store_id, $source_block_id, $target_store_id, $target_block_id, array $category_ids = null, array &$processed_category_ids = array()) {
         /** @var Transfluent_Translate_Helper_Category $categoryHelper */
         $categoryHelper = Mage::helper('transfluenttranslate/category');
         if (is_null($category_ids)) {
