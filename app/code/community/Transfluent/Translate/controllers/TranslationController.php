@@ -3,6 +3,7 @@
 class Transfluent_Translate_TranslationController extends Mage_Core_Controller_Front_Action {
     private $_handlers = array(
         "/store\-([0-9]{1,})\-tag\-([0-9]{1,})/" => '_saveTagName',
+        "/store\-([0-9]{1,})\-product\-([0-9]{1,})\-image\-([0-9]{1,})\-label/" => '_saveImageLabel',
         "/store\-([0-9]{1,})\-product\-([0-9]{1,})\-(.*)/" => '_saveProductDetails',
         "/store\-([0-9]{1,})\-attribute\-([0-9]{1,})\-option\-([0-9]{1,})/" => '_saveAttributeOptions',
         "/store\-([0-9]{1,})\-attribute\-([0-9]{1,})/" => '_saveAttributeName',
@@ -516,6 +517,26 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
             $translated_str,
             $text_id,
             $payload);
+    }
+
+    private function _saveImageLabel($matches, $payload, $text_id) {
+        $store_id = $matches[1];
+        $product_id = $matches[2];
+        $image_id = $matches[3];
+
+        $translated_str = trim($payload['text']);
+
+        $product = Mage::getModel('catalog/product')->setStoreId($store_id)->load($product_id);
+        /** @var Mage_Catalog_Model_Product $product */
+        $images = $product->getMediaGalleryImages();
+        $attributes = $product->getTypeInstance(true)->getSetAttributes($product);
+        $media_gallery_backend = $attributes['media_gallery']->getBackend();
+        /** @var Mage_Catalog_Model_Product_Attribute_Backend_Media $media_gallery_backend */
+        $image = $images->getItemById($image_id);
+        $image->setData('label', $translated_str);
+        $media_gallery_backend->updateImage($product, $image->getFile(), $image->getData());
+        $product->save();
+        return true;
     }
 
     private function _saveCategoryDescription($matches, $payload, $text_id) {
