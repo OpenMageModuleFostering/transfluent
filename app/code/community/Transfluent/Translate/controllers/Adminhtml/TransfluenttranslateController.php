@@ -86,10 +86,11 @@ class Transfluent_Translate_Adminhtml_TransfluenttranslateController extends Mag
         $store_from_id = intval($this->getRequest()->getParam('store_from_id'));
         $store_to_id = intval($this->getRequest()->getParam('store_to_id'));
         $tags = $this->getRequest()->getParam('tags');
-        $instructions = $this->getRequest()->getParam('instructions')
-            ?: Mage::getStoreConfig(
-                'transfluenttranslate/transfluenttranslate_settings/transfluent_instructions',
-                $store_to_id);
+        $instructions = $this->getRequest()->getParam('instructions') ? 
+                        $this->getRequest()->getParam('instructions') : 
+                        Mage::getStoreConfig(
+                                            'transfluenttranslate/transfluenttranslate_settings/transfluent_instructions',
+                                            $store_to_id);
 
         if ($store_to_id === $store_from_id) {
             $e = new Transfluent_Translate_Exception_ETransfluentNothingToTranslateBase();

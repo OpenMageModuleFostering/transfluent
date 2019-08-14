@@ -15,7 +15,6 @@ class Transfluent_Translate_Block_Regform extends Mage_Adminhtml_Block_System_Co
             $html = $this->getLayout()->createBlock('transfluenttranslate/account')->setTemplate('transfluent/account/create.phtml')->toHtml();
         }
         $res = '<td>' . $html . '</td>';
-
-        return $this->_decorateRowHtml($element, $res);
+        return $res;
     }
 }

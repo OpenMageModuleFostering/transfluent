@@ -10,14 +10,12 @@ class Transfluent_Translate_Helper_Category extends Mage_Core_Helper_Abstract {
      *
      * @return array
      */
-    public function getCategoryArray() {
+    public function getCategoryIdsArray() {
         $category = Mage::getModel('catalog/category');
         $tree = $category->getTreeModel();
         $tree->load();
         $ids = $tree->getCollection()->getAllIds();
-
-        $arr = $this->categoriesToArray($ids);
-        return $arr;
+        return $ids;
     }
 
     private function categoriesToArray($ids, &$visited = array()) {
@@ -87,8 +85,8 @@ class Transfluent_Translate_Helper_Category extends Mage_Core_Helper_Abstract {
      * @return string
      */
     public function getCategoriesHTML() {
-        $categories = $this->getCategoryArray();
-        $html = $this->categoryArrayToHtml($categories);
+        $category_ids = $this->getCategoryIdsArray();
+        $html = $this->categoryArrayToHtml($category_ids);
         return $html;
     }
 
@@ -96,18 +94,31 @@ class Transfluent_Translate_Helper_Category extends Mage_Core_Helper_Abstract {
      * @param $categories
      * @return string
      */
-    private function categoryArrayToHtml($categories) {
+    private function categoryArrayToHtml($category_ids, &$visited = array()) {
+        ini_set('memory_limit', '128M');
+        set_time_limit(0);
+
         $html = "<ul style=\"margin-left: 15px\">";
-        foreach ($categories as $category) {
-            $html .= "<li>";
-            $html .= "<input type='checkbox' name='chk_group[]' value=" . $category['value'] . " /> " . $category['label']
-                . " (" . $category['productCount'] . ")" . "<br/>";
-
-            if ($category['children']) {
-                $html .= $this->categoryArrayToHtml($category['children']);
+        foreach ($category_ids AS $cateogry_id) {
+            if (in_array($cateogry_id, $visited)) continue;
+            $visited[] = $cateogry_id;
+            /** @var Mage_Catalog_Model_Category $cat */
+            $cat = Mage::getModel('catalog/category');
+            $cat->load($cateogry_id);
+            if (!$cat->getName()) {
+                continue;
             }
+            $html .= "<li>";
+            $html .= "<label><input type='checkbox' name='chk_group[]' value=" . $cateogry_id . " /> " . $cat->getName()
+                . " (" . $cat->getProductCount() . ")" . "<br>";
 
-            $html .= "</li>";
+            $cat_children_ids = $cat->getAllChildren(true);
+            if (!empty($cat_children_ids)) {
+                $html .= $this->categoryArrayToHtml($cat_children_ids, $visited);
+            }
+            unset($cat_children_ids);
+
+            $html .= "</label></li>";
         }
 
         $html .= "</ul>";

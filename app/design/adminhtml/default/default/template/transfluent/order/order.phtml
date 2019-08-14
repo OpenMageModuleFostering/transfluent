@@ -213,7 +213,9 @@ MSG
 
 <!-- categories list -->
 <div style="margin-left: 20px;">
-    <?PHP print $categoryHelper->getCategoriesHTML(); ?>
+    <?php
+    print $categoryHelper->getCategoriesHTML();
+    ?>
 </div>
 
 <script type="text/javascript">
@@ -370,11 +372,11 @@ function QuoteTranslation(quote_btn) {
                 var responseObj = response.responseText.evalJSON();
                 $('quote_action_buttons_container').show();
                 $('get_new_quote_button').hide();
-                if ("success" == responseObj.status) {
+                if (responseObj.status === "success") {
                     showElementById('tf_translate_form');
                     updateQuoteForm(responseObj);
-                } else if ("error" == responseObj.status) {
-                    document.getElementById("tf_translate_get_quote_error_msg").value = responseObj.message;
+                } else if (responseObj.status === "error") {
+                    document.getElementById("tf_translate_get_quote_error_msg").innerText = responseObj.message;
                     showElementById('tf_translate_get_quote_error');
                 }
             }

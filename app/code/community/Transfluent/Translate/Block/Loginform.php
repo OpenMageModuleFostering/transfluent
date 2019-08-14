@@ -16,6 +16,6 @@ class Transfluent_Translate_Block_Loginform extends Mage_Adminhtml_Block_System_
         }
         $html .= $this->getLayout()->createBlock('transfluenttranslate/account')->setTemplate('transfluent/account/action.phtml')->toHtml();
         $res = '<td>' . $html . '</td>';
-        return $this->_decorateRowHtml($element, $res);
+        return $res;
     }
 }
