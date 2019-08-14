@@ -113,7 +113,7 @@ EOFJSON;
     }
 
     /**
-     * @param array $stores
+     * @param Mage_Core_Model_Store[] $stores
      * @param null $selectTagId
      *
      * @return string
@@ -126,16 +126,15 @@ EOFJSON;
         $default_source_language_id = Mage::getStoreConfig('transfluenttranslate/transfluenttranslate_settings/transfluent_default_language');
         $html = "<select id=\"$selectTagId\" class='translateto_select'>";
         $html .= "<option class='disabled_item' disabled>";
-        foreach ($stores AS $store_id) {
-            $store = Mage::app()->getStore($store_id);
-            $language_code = $this->GetStoreLocale($store_id);
+        foreach ($stores AS $store) {
+            $language_code = $this->GetStoreLocale($store->getId());
             $language_id = $this->getLangByCode($language_code, true);
             if (is_null($language_id)) {
                 // Language is unsupported
                 continue;
             }
             $is_selected = ($default_source_language_id == $language_id);
-            $html .= '<option value="' . $store_id . '"' . ($is_selected ? ' selected="SELECTED"' : '') . '>' . $store->getName() . ' (' . $this->getLanguageNameByCode($language_code, true) . ')</option>';
+            $html .= '<option value="' . $store->getId() . '"' . ($is_selected ? ' selected="SELECTED"' : '') . '>' . $store->getName() . ' (' . $this->getLanguageNameByCode($language_code, true) . ')</option>';
         }
         $html .= '</select>';
         return $html;

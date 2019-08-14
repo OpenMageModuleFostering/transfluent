@@ -3,18 +3,19 @@
     "type": "magento-module",
     "license": "MIT",
     "homepage": "",
-    "description": "Want to add another language to your ecommerce site? Transfluent supports Magento, the leading ecommerce solution.
+    "description": "<p>Want to add another language to your ecommerce site? Transfluent supports Magento, the leading ecommerce solution.</p>
 
-You can translate your entire catalog of products once, effortlessly! Just choose which languages to target and we take care of the rest. When you later add new products or make changes to the existing ones, the translations will be updated as well.
 
-Just install the plugin and do a one-time account setup, and you’re all set. You will be billed monthly for all the translations made, based on the number of words and the service level you choose.
+<p>You can translate your entire catalog of products once, effortlessly! Just choose which languages to target and we take care of the rest. When you later add new products or make changes to the existing ones, the translations will be updated as well.</p>
 
-<a href="https://tf-wordpress.s3.amazonaws.com/wp-content/uploads/2014/01/TF-Magento-Getting_started.pdf">Download Getting started guide</a>
+<p>Just install the plugin and do a one-time account setup, and you're all set. You will be billed monthly for all the translations made, based on the number of words and the service level you choose.</p>
+
+<p><a href="https://tf-wordpress.s3.amazonaws.com/wp-content/uploads/2014/01/TF-Magento-Getting_started.pdf">Download Getting started guide</a></p>
 ",
     "authors": [
     {
-        "name": "Ilari M\u00e4kimattila",
-        "email": "ilari@transfluent.com"
+        "name": "Transfluent Oy",
+        "email": "coders@transfluent.com"
     }
 ],
     "suggest": {

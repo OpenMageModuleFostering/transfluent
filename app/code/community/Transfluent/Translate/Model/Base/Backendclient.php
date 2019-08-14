@@ -144,7 +144,7 @@ class Transfluent_Translate_Model_Base_Backendclient extends Mage_Adminhtml_Cont
             $message['message'] = 'You have successfully connected to Transfluent.com';
             $session = Mage::getSingleton('core/session');
             /** @var Mage_Core_Model_Session $session */
-            $session->addSuccess('You have successfully authenticated. If you have not yet activated billing mode for your account, you should do it next  by contacting <a href="mailto:sales@transfluent.com">sales@transfluent.com</a> in order to setup invoicing.');
+            $session->addSuccess('You have successfully authenticated. If you have not yet activated billing mode for your account, you should do it next  by contacting <a href="mailto:sales@transfluent.com">sales@transfluent.com</a> in order to setup invoicing. Or visit <a href="https://www.transfluent.com/my-account/">your Transfluent account page</a> to setup a credit card charging.');
         }
         return $message;
     }

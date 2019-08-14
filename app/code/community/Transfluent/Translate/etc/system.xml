@@ -107,8 +107,12 @@
                     <show_in_website>1</show_in_website>
                     <show_in_store>1</show_in_store>
                     <comment><![CDATA[<img src="http://cdn.transfluent.com/transfluent.com/gfx/transfluent-logo_v3.png"><br>
-                        <strong>Support:</strong> <a href="support@transfluent.com">support@transfluent.com</a><br>
-                        <strong>Extension version:</strong> 1.1.5<br>
+                        <p>
+                            Contact <a href="mailto:sales@transfluent.com">sales@transfluent.com</a> to setup invoicing
+                            or visit <a href="https://www.transfluent.com/my-account/">your Transfluent account page</a> to setup a credit card.
+                        </p>
+                        <strong>Support:</strong> <a href="mailto:support@transfluent.com">support@transfluent.com</a><br>
+                        <strong>Extension version:</strong> 1.2.1<br>
                         <strong>Extension homepage:</strong> <a href="http://www.transfluent.com/products/magento/">transfluent.com/products/magento</a>
                     ]]></comment>
                     <fields>

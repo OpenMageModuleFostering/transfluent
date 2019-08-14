@@ -222,11 +222,9 @@ MSG
             onSuccess: function (response) {
                 ResetEstimation();
                 var text = response.responseText;
-                console.log(response.responseText);
                 if (response.responseText.isJSON()) {
                     var response_obj = response.responseText.evalJSON();
                     hideElementById('tf_translate_form');
-                    console.log(response_obj);
                     showElementById('tf_translate_order_result');
                     if ("success" == response_obj.status) {
                         showElementById('tf_translate_order_result_success_msg');
@@ -240,7 +238,6 @@ MSG
             },
             onError: function (response) {
                 alert('Failed to place order. Please try again!');
-                console.log(response.responseText);
             }
         });
     }

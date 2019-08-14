@@ -13,7 +13,7 @@ class Transfluent_Translate_Helper_Util extends Mage_Core_Helper_Abstract
      */
     public function getSuccessJson($string)
     {
-        return json_encode(array('status' => 'success', 'message' => htmlspecialchars($string)));
+        return json_encode(array('status' => 'success', 'message' => $string));
     }
 
     /**
@@ -24,6 +24,6 @@ class Transfluent_Translate_Helper_Util extends Mage_Core_Helper_Abstract
      */
     public function getErrorJson($string)
     {
-        return json_encode(array('status' => 'error', 'message' => htmlspecialchars($string)));
+        return json_encode(array('status' => 'error', 'message' => $string));
     }
 }

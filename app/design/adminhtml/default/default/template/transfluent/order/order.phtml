@@ -26,7 +26,7 @@ foreach ($stores AS $store) {
     if ($this->getRequest()->getParam('store') == $store->getId()) {
         continue;
     }
-    $possible_source_languages[] = $store->getId();
+    $possible_source_languages[] = $store;
 }
 if (empty($possible_source_languages)) {
     ?>
@@ -297,11 +297,10 @@ function OrderTranslation(order_btn) {
                     $('tf_translate_order_result_error_msg_caption').update(response_obj.message);
                 }
             }
-
+            $(order_btn).enable();
         },
         onError: function (response) {
             alert('Failed to place order. Please try again!');
-            console.log(response.responseText);
         }
     });
 }
