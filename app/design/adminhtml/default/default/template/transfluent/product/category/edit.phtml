@@ -59,7 +59,7 @@ print '</div>';
             }
             stores.push(value);
         });
-        new Ajax.Request('<?php echo $this->getUrl('transfluenttranslate/adminhtml_transfluentorder/category_order') ?>', {
+        new Ajax.Request('<?php echo $this->getUrl('adminhtml/Adminhtml_Transfluentorder/category_order') ?>', {
             method: 'post',
             parameters: {
                 'instructions': $('tf_translate_instructions_txt').getValue(),
@@ -115,7 +115,7 @@ print '</div>';
             }
             stores.push(value);
         });
-        new Ajax.Request('<?php echo $this->getUrl('transfluenttranslate/adminhtml_transfluenttranslate/get_category_quote') ?>', {
+        new Ajax.Request('<?php echo $this->getUrl('adminhtml/Adminhtml_Transfluenttranslate/get_category_quote') ?>', {
             method: 'post',
             parameters: {
                 'from_store': $('translateto').getValue(),

@@ -1,6 +1,7 @@
 <?php
 
 class Transfluent_Translate_TranslationController extends Mage_Core_Controller_Front_Action {
+//class Transfluent_Translate_TranslationController extends Mage_Adminhtml_Controller_Action { // @todo: Check..
     private $_handlers = array(
         "/store\-([0-9]{1,})\-tag\-([0-9]{1,})/" => '_saveTagName',
         "/store\-([0-9]{1,})\-product\-([0-9]{1,})\-(.*)/" => '_saveProductDetails',
@@ -73,6 +74,7 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
         $source_store_id = $this->getRequest()->getParam('source_store');
         $target_store_id = $this->getRequest()->getParam('target_store');
         $quote_id = $this->getRequest()->getParam('quote_id');
+        $quote_type = $this->getRequest()->getParam('type');
 
         $mage_admin_url = Mage::getModel('adminhtml/url');
         /** @var Mage_Adminhtml_Model_Url $mage_admin_url */
@@ -83,7 +85,7 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
 
         if ($admin_html_helper->getCurrentUserId()) {
             // LOGGED-IN: REDIRECT TO: BASE + transfluent/adminhtml_transfluentorder/redirectToQuote/quote_id/HkvrSz7z/source_store/1/target_store/4/
-            $quote_order_step3_url = $mage_admin_url->getUrl('transfluent/adminhtml_transfluentorder/redirectToQuote', array('source_store' => $source_store_id, 'target_store' => $target_store_id, 'quote_id' => $quote_id));
+            $quote_order_step3_url = $mage_admin_url->getUrl('adminhtml/Adminhtml_Transfluentorder/redirectToQuote', array('source_store' => $source_store_id, 'target_store' => $target_store_id, 'quote_id' => $quote_id, 'type' => $quote_type));
             $this->getResponse()->setRedirect($quote_order_step3_url);
             return;
         }
@@ -91,7 +93,9 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
         $cookie = Mage::getSingleton('core/cookie');
         /** @var Mage_Core_Model_Cookie $cookie */
         $cookie->set('_tf_restore_quote', serialize(array('source' => $source_store_id, 'target' => $target_store_id, 'quote_id' => $quote_id)), null, '/');
-        $quote_order_step3_url = $mage_admin_url->getUrl('transfluent/adminhtml_transfluentorder/orderFromCmsStep3');
+        //$uri_action = ($quote_type == 'category' ? 'orderByCategoryStep3' : 'orderFromCmsStep3'); // CMS view handles both of them for now..
+        $uri_action = 'orderFromCmsStep3';
+        $quote_order_step3_url = $mage_admin_url->getUrl('adminhtml/Adminhtml_Transfluentorder/' . $uri_action);
         $this->getResponse()->setRedirect($quote_order_step3_url);
     }
 

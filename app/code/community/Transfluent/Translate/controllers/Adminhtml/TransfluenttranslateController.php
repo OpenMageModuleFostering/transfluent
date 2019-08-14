@@ -1,9 +1,5 @@
 <?php
 
-/**
- * Transfluent extension for Magento, (c) 2013, 1.1.1
- * Author: coders@transfluent.com
- */
 class Transfluent_Translate_Adminhtml_TransfluenttranslateController extends Mage_Adminhtml_Controller_Action {
 
     protected function _initAction() {

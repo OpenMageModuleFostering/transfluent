@@ -1,9 +1,5 @@
 <?php
 
-/**
- * Transfluent extension for Magento, (c) 2013, 1.1.1
- * Author: coders@transfluent.com
- */
 class Transfluent_Translate_Block_Loginform extends Mage_Adminhtml_Block_System_Config_Form_Field {
     protected function _getElementHtml(Varien_Data_Form_Element_Abstract $element) {}
 

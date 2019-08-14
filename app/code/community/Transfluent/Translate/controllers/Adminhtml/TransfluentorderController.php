@@ -10,7 +10,13 @@ class Transfluent_Translate_Adminhtml_TransfluentorderController extends Mage_Ad
         $quote_id = $this->getRequest()->getParam('quote_id');
         $source_store_id = $this->getRequest()->getParam('source_store');
         $target_store_id = $this->getRequest()->getParam('target_store');
-        Mage::app()->getResponse()->setRedirect(Mage::helper("adminhtml")->getUrl("transfluent/adminhtml_transfluentorder/orderFromCmsStep3", array("quote_id" => $quote_id, "source" => $source_store_id, "target" => $target_store_id)));
+        $quote_type = $this->getRequest()->getParam('type');
+        /*if ($quote_type == 'category') {
+            Mage::app()->getResponse()->setRedirect(Mage::helper("adminhtml")->getUrl("adminhtml/Adminhtml_Transfluentorder/orderByCategoryStep3", array("quote_id" => $quote_id, "source" => $source_store_id, "target" => $target_store_id)));
+            return;
+        }*/
+        // CMS view handles both of them for now..
+        Mage::app()->getResponse()->setRedirect(Mage::helper("adminhtml")->getUrl("adminhtml/Adminhtml_Transfluentorder/orderFromCmsStep3", array("quote_id" => $quote_id, "source" => $source_store_id, "target" => $target_store_id)));
     }
 
     protected function _initAction() {
@@ -427,20 +433,6 @@ class Transfluent_Translate_Adminhtml_TransfluentorderController extends Mage_Ad
                 ->getLayout()
                 ->createBlock('transfluenttranslate/adminhtml_transfluentorder')
                 ->setTemplate('transfluent/order/category_step5.phtml')->setData('fork_id', $data['response'])->setData('quote_id', $quote_id)
-        );
-        $this->renderLayout();
-    }
-
-    public function orderByCategoryStep4Action($init_layout = true) {
-        if ($init_layout) {
-            $this->_initAction();
-        }
-
-        $this->_addContent(
-            $this
-                ->getLayout()
-                ->createBlock('transfluenttranslate/adminhtml_transfluentorder')
-                ->setTemplate('transfluent/order/category_step4.phtml')
         );
         $this->renderLayout();
     }

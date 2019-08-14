@@ -65,7 +65,7 @@ if (empty($fields_to_translate_in)) {
 <script type="text/javascript">
     function OrderTranslation(order_btn) {
         $(order_btn).disable();
-        new Ajax.Request('<?=$this->getUrl('transfluenttranslate/adminhtml_transfluentorder/grid_order')?>', {
+        new Ajax.Request('<?=$this->getUrl('adminhtml/Adminhtml_Transfluentorder/grid_order')?>', {
             method: 'post',
             parameters: {
                 'translate_from': '<?=$store_from_id?>',

@@ -23,7 +23,7 @@ $source_store = Mage::app()->getStore($source);
     </div>
 
     <div class="entry-edit" style="width: 33%; min-width: 550px;">
-        <form action="<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderByCategoryStep3')?>" method="post" id="edit_form"><div><input name="form_key" type="hidden" value="<?=Mage::getSingleton('core/session')->getFormKey()?>"></div><div class="entry-edit-head">
+        <form action="<?=$this->getUrl('adminhtml/Adminhtml_Transfluentorder/orderByCategoryStep3')?>" method="post" id="edit_form"><div><input name="form_key" type="hidden" value="<?=Mage::getSingleton('core/session')->getFormKey()?>"></div><div class="entry-edit-head">
                 <h4 class="icon-head head-edit-form fieldset-legend">Select categories to translate content from</h4>
                 <div class="form-buttons"></div>
             </div>
@@ -40,7 +40,7 @@ $source_store = Mage::app()->getStore($source);
                         ?>
                     </div>
                     <div style="text-align: right; margin-right: 33%;">
-                        <button title="Back" type="button" class="scalable back" onclick="$(this).up('form').writeAttribute('action', '<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderByCategoryStep1')?>').submit(); return false;">Back</button>
+                        <button title="Back" type="button" class="scalable back" onclick="$(this).up('form').writeAttribute('action', '<?=$this->getUrl('adminhtml/Adminhtml_Transfluentorder/orderByCategoryStep1')?>').submit(); return false;">Back</button>
                         <button title="Next" type="submit" class="scalable save">Next</button>
                     </div>
 

@@ -25,7 +25,7 @@ $quote_id = $this->getData('quote_id') ? $this->getData('quote_id') :  $this->ge
 </div>
 
 <div class="entry-edit" style="width: 33%; min-width: 550px;">
-    <form action="<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderFromCmsStep4')?>" method="post" id="edit_form"><div><input name="form_key" type="hidden" value="<?=Mage::getSingleton('core/session')->getFormKey()?>"></div><div class="entry-edit-head">
+    <form action="<?=$this->getUrl('adminhtml/Adminhtml_Transfluentorder/orderFromCmsStep4')?>" method="post" id="edit_form"><div><input name="form_key" type="hidden" value="<?=Mage::getSingleton('core/session')->getFormKey()?>"></div><div class="entry-edit-head">
             <h4 class="icon-head head-edit-form fieldset-legend">Get a quote</h4>
             <div class="form-buttons"></div>
         </div>
@@ -51,7 +51,7 @@ $quote_id = $this->getData('quote_id') ? $this->getData('quote_id') :  $this->ge
                 <?php
                 if ($level) {
                     // Missing some POST-data, such as level, hints that the quote was restored from an external link -> don't allow going back
-                    ?><button title="Back" type="button" class="scalable back" onclick="$(this).up('form').writeAttribute('action', '<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderFromCmsStep2')?>').submit(); return false;">Back</button><?php
+                    ?><button title="Back" type="button" class="scalable back" onclick="$(this).up('form').writeAttribute('action', '<?=$this->getUrl('adminhtml/Adminhtml_Transfluentorder/orderFromCmsStep2')?>').submit(); return false;">Back</button><?php
                 }
                 ?>
                 <button title="Refresh" id="quote_refresh_btn" type="submit" class="scalable save">Refresh</button>
@@ -70,7 +70,7 @@ $quote_id = $this->getData('quote_id') ? $this->getData('quote_id') :  $this->ge
         if (!confirm('Are you sure?')) {
             return;
         }
-        $(element).up('form').writeAttribute('action', '<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderFromCmsStep5')?>').submit();
+        $(element).up('form').writeAttribute('action', '<?=$this->getUrl('adminhtml/Adminhtml_Transfluentorder/orderFromCmsStep5')?>').submit();
     }
 
     document.observe("dom:loaded", function() {
@@ -80,7 +80,7 @@ $quote_id = $this->getData('quote_id') ? $this->getData('quote_id') :  $this->ge
         var refresh_btn = $('quote_refresh_btn');
         refresh_btn.hide();
         var PollerFunction = function() {
-            new Ajax.Request('<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderFromCmsStep3')?>', {
+            new Ajax.Request('<?=$this->getUrl('adminhtml/Adminhtml_Transfluentorder/orderFromCmsStep3')?>', {
                 parameters: {quote_id: $F('quote_id')},
                 onSuccess: function (xhr) {
                     var response = xhr.responseJSON;

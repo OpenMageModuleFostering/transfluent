@@ -26,13 +26,13 @@ $quote_id = $this->getData('quote_id');
                 </div>
                 <div class="hor-scroll" id="thanks" style="display: none;">
                     <h2>Thank you!</h2>
-                    <p>Your order has been successfully placed. The ordered items and their progress are shown in <!-- &quot;<a href="<?=$this->getUrl('transfluent/adminhtml_transfluenttranslate/index')?>">Translations</a>&quot; section in Magento and under--> &quot;<a href="https://www.transfluent.com/my-account/" target="_blank">My Account</a>&quot; on our website.</p>
+                    <p>Your order has been successfully placed. The ordered items and their progress are shown in &quot;<a href="https://www.transfluent.com/my-account/" target="_blank">My Account</a>&quot; on our website.</p>
                 </div>
             </div>
         </div>
 <script>
     var PollFunction = function() {
-        new Ajax.Request('<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderByCategoryStep3')?>', {
+        new Ajax.Request('<?=$this->getUrl('adminhtml/Adminhtml_Transfluentorder/orderByCategoryStep3')?>', {
             parameters: {quote_id: $F('quote_id')},
             onSuccess: function (xhr) {
                 var response = xhr.responseJSON;

@@ -32,7 +32,7 @@ $quote_id = $this->getData('quote_id');
         </div>
 <script>
     var PollFunction = function() {
-        new Ajax.Request('<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderFromCmsStep3')?>', {
+        new Ajax.Request('<?=$this->getUrl('adminhtml/Adminhtml_Transfluentorder/orderFromCmsStep3')?>', {
             parameters: {quote_id: $F('quote_id')},
             onSuccess: function (xhr) {
                 var response = xhr.responseJSON;

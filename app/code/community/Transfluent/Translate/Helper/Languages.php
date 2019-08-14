@@ -262,9 +262,8 @@ EOFJSON;
 
     public function getQualityArray($default_level = null) {
         $levels = array(
-            '1' => 'Native speaker (powered by Gengo)',
+            '1' => 'Native speaker',
             '2' => 'Professional translator',
-            //'3' => 'Pair of prof. translators'
         );
         $levels_out = array();
         if ($default_level) {

@@ -1,9 +1,21 @@
+<?php
+$mage_admin_url = Mage::getModel('adminhtml/url');
+/** @var Mage_Adminhtml_Model_Url $mage_admin_url */
+$mage_admin_url->setStore(0);
+$mage_admin_url->setControllerName('Adminhtml_TransfluentAccount');
+$logout_url = clone $mage_admin_url;
+$logout_url->setActionName('logout');
+$create_account_url = clone $mage_admin_url;
+$create_account_url->setActionName('create');
+$authenticate_url = clone $mage_admin_url;
+$authenticate_url->setActionName('authenticate');
+?>
 <script type="text/javascript">
     //<![CDATA[
     var transfluentAccount = new TransfluentAccount({
-        cUrl: '<?php echo $this->getUrl('transfluent/adminhtml_account/create', array('key' => $this->getKey('create'))) ?>',
-        aUrl: '<?php echo $this->getUrl('transfluent/adminhtml_account/authenticate', array('key' => $this->getKey('authenticate'))) ?>',
-        lUrl: '<?php echo $this->getUrl('transfluent/adminhtml_account/logout', array('key' => $this->getKey('logout'))) ?>'
+        cUrl: '<?=$create_account_url->getUrl()?>',
+        aUrl: '<?=$authenticate_url->getUrl()?>',
+        lUrl: '<?=$logout_url->getUrl()?>'
     });
 
     function transfluentCreate() {

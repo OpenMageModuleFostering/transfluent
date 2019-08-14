@@ -1,9 +1,5 @@
 <?php
 
-/**
- * Transfluent extension for Magento, (c) 2013, 1.1.1
- * Author: coders@transfluent.com
- */
 class Transfluent_Translate_Helper_Data extends Mage_Core_Helper_Abstract {
     public function getFields($sku) {
         $product = Mage::getModel('catalog/product')->loadByAttribute('sku', $sku);

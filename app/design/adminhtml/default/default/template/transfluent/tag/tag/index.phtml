@@ -19,10 +19,10 @@ $language_helper = Mage::helper('transfluenttranslate/languages');
 
     window.onload = function () {
         GetQuote();
-    }
+    };
 
     function GetQuote() {
-        new Ajax.Request('<?php echo $this->getUrl('transfluenttranslate/adminhtml_transfluenttranslate/get_tag_quote') ?>', {
+        new Ajax.Request('<?php echo $this->getUrl('adminhtml/Adminhtml_Transfluenttranslate/get_tag_quote') ?>', {
             method: 'post',
             parameters: {
                 'instructions': $('tf_translate_instructions_txt').getValue(),
@@ -157,7 +157,7 @@ $language_helper = Mage::helper('transfluenttranslate/languages');
 
         function OrderTranslation(order_btn) {
             $(order_btn).disable();
-            new Ajax.Request('<?php echo $this->getUrl('transfluenttranslate/adminhtml_transfluentorder/tag_order') ?>', {
+            new Ajax.Request('<?php echo $this->getUrl('adminhtml/Adminhtml_Transfluentorder/tag_order') ?>', {
                 method: 'post',
                 parameters: {
                     'instructions': $('tf_translate_instructions_txt').getValue(),

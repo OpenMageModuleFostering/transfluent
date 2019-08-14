@@ -2,7 +2,7 @@
 <config>
     <modules>
         <Transfluent_Translate>
-            <version>1.4.0</version>
+            <version>1.4.1</version>
         </Transfluent_Translate>
     </modules>
 
@@ -13,7 +13,7 @@
 
                 <args>
                     <module>Transfluent_Translate</module>
-                    <frontName>Translate</frontName>
+                    <frontName>transfluenttranslate</frontName>
                 </args>
             </transfluenttranslate>
         </routers>
@@ -99,13 +99,13 @@
 
     <admin>
         <routers>
-            <transfluenttranslate>
-                <use>admin</use>
+            <adminhtml>
                 <args>
-                    <module>Transfluent_Translate</module>
-                    <frontName>transfluent</frontName>
+                    <modules>
+                        <transfluenttranslate after="Mage_Adminhtml">Transfluent_Translate</transfluenttranslate>
+                    </modules>
                 </args>
-            </transfluenttranslate>
+            </adminhtml>
         </routers>
     </admin>
 
@@ -145,16 +145,16 @@
                     <submenu translate="title" module="transfluenttranslate">
                         <title>Order translations by category</title>
                         <sort_order>1</sort_order>
-                        <action>transfluenttranslate/adminhtml_transfluentorder/orderByCategoryStep1</action>
+                        <action>adminhtml/Adminhtml_Transfluentorder/orderByCategoryStep1</action>
                     </submenu>
                     <submenu2 translate="title" module="transfluenttranslate">
                         <title>Order translations for CMS content</title>
                         <sort_order>2</sort_order>
-                        <action>transfluenttranslate/adminhtml_transfluentorder/orderFromCmsStep1</action>
+                        <action>adminhtml/Adminhtml_Transfluentorder/orderFromCmsStep1</action>
                     </submenu2>
                 </children>
                 <sort_order>71</sort_order>
-                <action>transfluenttranslate/adminhtml_transfluenttranslate</action>
+                <action>adminhtml/Adminhtml_Transfluenttranslate/index</action>
             </transfluenttranslate>
         </menu>
     </adminhtml>

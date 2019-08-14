@@ -70,10 +70,10 @@ if (empty($possible_source_languages)) {
         <script type="text/javascript">
             //<![CDATA[
             var estimate = new Estimate("<?php echo Mage::app()->getRequest()->getParam('store', 0) ?>", {
-                prepdata: '<?php echo $this->getUrl('transfluent/adminhtml_transfluenttranslate/preparedata') ?>',
-                savedata: '<?php echo $this->getUrl('transfluent/adminhtml_transfluenttranslate/savedata') ?>',
-                pushtext: '<?php echo $this->getUrl('transfluent/adminhtml_transfluenttranslate/pushtext') ?>',
-                esttexts: '<?php echo $this->getUrl('transfluent/adminhtml_transfluenttranslate/estimatetexts') ?>'
+                prepdata: '<?php echo $this->getUrl('adminhtml/Adminhtml_Transfluenttranslate/preparedata') ?>',
+                savedata: '<?php echo $this->getUrl('adminhtml/Adminhtml_Transfluenttranslate/savedata') ?>',
+                pushtext: '<?php echo $this->getUrl('adminhtml/Adminhtml_Transfluenttranslate/pushtext') ?>',
+                esttexts: '<?php echo $this->getUrl('adminhtml/Adminhtml_Transfluenttranslate/estimatetexts') ?>'
             });
 
             function estimateAll() {
@@ -81,8 +81,8 @@ if (empty($possible_source_languages)) {
             }
 
             var postEstimate = new PostEstimate({
-                transl: '<?php echo $this->getUrl('transfluent/adminhtml_transfluenttranslate/translateestimated') ?>',
-                cancel: '<?php echo $this->getUrl('transfluent/adminhtml_transfluenttranslate/deleteestimated') ?>'
+                transl: '<?php echo $this->getUrl('adminhtml/Adminhtml_Transfluenttranslate/translateestimated') ?>',
+                cancel: '<?php echo $this->getUrl('adminhtml/Adminhtml_Transfluenttranslate/deleteestimated') ?>'
             });
 
             function translateEstimated() {

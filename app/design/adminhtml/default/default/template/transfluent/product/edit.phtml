@@ -208,7 +208,7 @@ MSG
         if ($('force_translate')) {
             force_translate = $('force_translate').getValue();
         }
-        new Ajax.Request('<?php echo $this->getUrl('transfluenttranslate/adminhtml_transfluentorder/order') ?>', {
+        new Ajax.Request('<?php echo $this->getUrl('adminhtml/Adminhtml_Transfluentorder/order') ?>', {
             method: 'post',
             parameters: {
                 'store_from': $('store_language').getValue(),
@@ -279,7 +279,7 @@ MSG
         if ($('tf_translate_instructions_txt')) {
             params.instructions = $('tf_translate_instructions_txt').getValue();
         }
-        new Ajax.Request('<?php echo $this->getUrl('transfluenttranslate/adminhtml_transfluenttranslate/get_quote') ?>', {
+        new Ajax.Request('<?php echo $this->getUrl('adminhtml/Adminhtml_Transfluenttranslate/get_quote') ?>', {
             method: 'post',
             parameters: params,
             onSuccess: function (response) {

@@ -1,10 +1,6 @@
 <?php
 
-/**
- * Transfluent extension for Magento, (c) 2013, 1.1.1
- * Author: coders@transfluent.com
- */
-class Transfluent_Translate_Adminhtml_AccountController extends Mage_Adminhtml_Controller_Action {
+class Transfluent_Translate_Adminhtml_TransfluentAccountController extends Mage_Adminhtml_Controller_Action {
     public function createAction() {
         $email = $this->getRequest()->getParam('email');
         $terms = $this->getRequest()->getParam('terms');
