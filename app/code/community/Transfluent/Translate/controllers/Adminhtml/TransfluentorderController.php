@@ -395,7 +395,9 @@ class Transfluent_Translate_Adminhtml_TransfluentorderController extends Mage_Ad
         /** @var Transfluent_Translate_Model_Base_Backendclient $translate */
         $translate = Mage::getModel('transfluenttranslate/base_backendclient');
         $quote_id = $this->getRequest()->getParam('quote_id');
+        $source = $this->getRequest()->getParam('source');
         $instructions = $this->getRequest()->getParam('instructions');
+        $instructions .= PHP_EOL . PHP_EOL . 'Text is from webstore: ' . Mage::app()->getStore($source)->getBaseUrl() . PHP_EOL . PHP_EOL;
 
         $data = $translate->OrderCategoryQuote($quote_id, $instructions);
         if (!$data || $data['status'] != 'OK') {
@@ -502,6 +504,14 @@ class Transfluent_Translate_Adminhtml_TransfluentorderController extends Mage_Ad
         if ($init_layout) {
             // Preserve any pre-generated errors
             $this->_initAction();
+        }
+
+        if ($this->getRequest()->getParam('update_quote_btn')) {
+            if (!$this->getRequest()->getParam('translate_fields')) {
+                $this->getLayout()->getMessagesBlock()->addError('Please select at least one product field to translate!');
+            } else {
+                $data = $translate->UpdateCategoryQuote($quote_id, $this->getRequest()->getParam('translate_fields'));
+            }
         }
 
         $target = $this->getRequest()->getParam('target');

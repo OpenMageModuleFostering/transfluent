@@ -173,11 +173,23 @@ class Transfluent_Translate_Model_Base_Backendclient extends Mage_Adminhtml_Cont
         return $this->CallApi('magento/quote', self::HTTP_GET, $payload);
     }
 
+    public function UpdateCategoryQuote($quote_id, $translate_fields) {
+        $payload = array(
+            'id' => $quote_id,
+            'token' => $this->token,
+            'translate_fields' => implode(",", $translate_fields),
+            'method' => 'PUT',
+            '__fork' => 1
+        );
+        return $this->CallApi('magento/quote', self::HTTP_POST, $payload);
+    }
+
     public function OrderCategoryQuote($quote_id, $instructions) {
         $payload = array(
             'id' => $quote_id,
             'token' => $this->token,
             'order' => true,
+            'instructions' => $instructions,
             'method' => 'PUT',
             '__fork' => 1
         );

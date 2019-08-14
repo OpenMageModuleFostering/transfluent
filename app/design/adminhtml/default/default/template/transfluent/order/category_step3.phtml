@@ -44,17 +44,20 @@ $quote_id = $this->getData('quote_id') ? $this->getData('quote_id') :  $this->ge
                     }
                     ?>
 
-                    <?php
-                    // @todo: AUTOMATIC XHR STATUS POLL LOOP
-                    // @todo: Show control to pick which fields to translate etc.
-                    ?>
-
                     <div id="quote_canvas" style="margin-bottom: 1rem;">
                         Loading..
                     </div>
 
                     <div id="quote_fields" style="margin-bottom: 1rem; display: none;">
-                        <?php // @todo: Allow to change fields to translate ?>
+                        <label>
+                            <strong>Select product fields to translate:</strong><br>
+                            <select name="translate_fields[]" id="translate_fields" multiple="multiple" style="height: 100px; margin-left: 0.5rem; width: 250px;" onchange="ChangeAttributes()">
+
+                            </select><br>
+                            <small>
+                                <?php echo $this->__('Hold down CTRL- (PC) or Command-key (MAC) to select multiple items.'); ?>
+                            </small>
+                        </label>
                     </div>
 
                     <div id="quote_instructions" style="margin-top: 2rem; margin-bottom: 1rem; display: none;">
@@ -65,12 +68,9 @@ $quote_id = $this->getData('quote_id') ? $this->getData('quote_id') :  $this->ge
                     <div style="margin-right: 33%;">
                         <button title="Back" type="button" class="scalable" onclick="$(this).up('form').writeAttribute('action', '<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderByCategoryStep2')?>').submit(); return false;">Back</button>
                         <button title="Refresh" id="quote_refresh_btn" type="submit" class="scalable save">Refresh</button>
+                        <button title="Update" name="update_quote_btn" value="Update quote" id="update_quote_btn" type="submit" class="scalable save" style="display: none;">Update quote</button>
                         <button title="Order" id="quote_order_btn" type="submit" class="scalable save" onclick="OrderClick(this); return false;" disabled="disabled">Order</button>
                     </div>
-
-                    <p style="margin-top: 1.5rem;">
-                        <i class="link-store-scope"></i> Please note that following product fields are translated: name, description and short description. Choosing the fields to be translated is possible in next release of this extension.
-                    </p>
                 </div>
             </div>
         </form></div>
@@ -84,9 +84,16 @@ $quote_id = $this->getData('quote_id') ? $this->getData('quote_id') :  $this->ge
         $(element).up('form').writeAttribute('action', '<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderByCategoryStep5')?>').submit();
     }
 
+    function ChangeAttributes() {
+        $('quote_order_btn').hide();
+        $('quote_refresh_btn').hide();
+        $('update_quote_btn').show();
+    }
+
     document.observe("dom:loaded", function() {
         var instructions_box = $('quote_instructions');
         var order_btn = $('quote_order_btn');
+        var quote_fields = $('quote_fields');
         order_btn.hide();
         var refresh_btn = $('quote_refresh_btn');
         refresh_btn.hide();
@@ -99,6 +106,9 @@ $quote_id = $this->getData('quote_id') ? $this->getData('quote_id') :  $this->ge
                     switch (response.status_code) {
                         case "0":
                         case "1":
+                            quote_fields.hide();
+                            order_btn.hide();
+                            instructions_box.hide();
                             refresh_btn.show();
                             setTimeout(PollerFunction, 2500);
                             break;
@@ -106,16 +116,37 @@ $quote_id = $this->getData('quote_id') ? $this->getData('quote_id') :  $this->ge
                             order_btn.show().removeAttribute('disabled');
                             refresh_btn.hide();
                             instructions_box.show();
-                            // response.translate_fields_available vs. translate_fields
+                            quote_fields.show();
+                            var s = $('translate_fields');
+                            s.empty();
+                            for (var index in response.details.translate_fields_available) {
+                                var field_name = response.details.translate_fields_available[index];
+                                if (typeof field_name == "string") {
+                                    var selected = false;
+                                    for (var index2 in response.details.translate_fields) {
+                                        var selected_field_name = response.details.translate_fields[index2];
+                                        if (selected_field_name == field_name) {
+                                            selected = true;
+                                        }
+                                    }
+                                    var attributes = {value: field_name};
+                                    if (selected) {
+                                        attributes.selected = 'selected';
+                                    }
+                                    s.insert(new Element('option', attributes).update(field_name));
+                                }
+                            }
                             break;
                         case "3":
                             order_btn.hide();
                             instructions_box.hide();
+                            quote_fields.hide();
                             break;
                         default:
                             order_btn.hide();
                             refresh_btn.show();
                             instructions_box.hide();
+                            quote_fields.hide();
                             break;
                     }
                 }
