@@ -957,9 +957,15 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
 
         $product_action = Mage::getSingleton('catalog/product_action');
         /** @var Mage_Catalog_Model_Product_Action $product_action */
+        $new_value = ($payload['text'] ? $payload['text'] : '');
+        if ((string)$field_name == 'url_key') {
+            $url_model = Mage::getSingleton('catalog/factory')->getProductUrlInstance();
+            /** @var Mage_Catalog_Model_Product_Url $url_model */
+            $new_value = $url_model->formatUrlKey($new_value);
+        }
         $product_action->updateAttributes(
             array($product_id),
-            array((string)$field_name => ($payload['text'] ? $payload['text'] : '')),
+            array((string)$field_name => $new_value),
             $store_id);
 
         return $this->_updateOrder($store_id, $text_id, $payload['level']);
