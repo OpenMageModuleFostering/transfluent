@@ -4,6 +4,15 @@
  * Class Transfluent_Translate_Adminhtml_TransfluentorderController
  */
 class Transfluent_Translate_Adminhtml_TransfluentorderController extends Mage_Adminhtml_Controller_Action {
+    protected $_publicActions = array('redirectToQuote');
+
+    public function redirectToQuoteAction() {
+        $quote_id = $this->getRequest()->getParam('quote_id');
+        $source_store_id = $this->getRequest()->getParam('source_store');
+        $target_store_id = $this->getRequest()->getParam('target_store');
+        Mage::app()->getResponse()->setRedirect(Mage::helper("adminhtml")->getUrl("transfluent/adminhtml_transfluentorder/orderFromCmsStep3", array("quote_id" => $quote_id, "source" => $source_store_id, "target" => $target_store_id)));
+    }
+
     protected function _initAction() {
         $this->loadLayout()
             ->getLayout()
@@ -432,6 +441,160 @@ class Transfluent_Translate_Adminhtml_TransfluentorderController extends Mage_Ad
                 ->getLayout()
                 ->createBlock('transfluenttranslate/adminhtml_transfluentorder')
                 ->setTemplate('transfluent/order/category_step4.phtml')
+        );
+        $this->renderLayout();
+    }
+
+    public function orderFromCmsStep5Action() {
+        $this->_initAction();
+
+        /** @var Transfluent_Translate_Model_Base_Backendclient $translate */
+        $translate = Mage::getModel('transfluenttranslate/base_backendclient');
+        $quote_id = $this->getRequest()->getParam('quote_id');
+        $source = $this->getRequest()->getParam('source');
+        $instructions = $this->getRequest()->getParam('instructions');
+        $instructions .= PHP_EOL . PHP_EOL . 'Text is from webstore: ' . Mage::app()->getStore($source)->getBaseUrl() . PHP_EOL . PHP_EOL;
+
+        $data = $translate->OrderCmsQuote($quote_id, $instructions);
+        if (!$data || $data['status'] != 'OK') {
+            $this->getLayout()->getMessagesBlock()->addError('Failed to place the order. Error: ' . @$data['error']['message']);
+            $this->orderFromCmsStep3Action(false);
+            return;
+        }
+
+        $this->_addContent(
+            $this
+                ->getLayout()
+                ->createBlock('transfluenttranslate/adminhtml_transfluentorder')
+                ->setTemplate('transfluent/order/cms_step5.phtml')->setData('fork_id', $data['response'])->setData('quote_id', $quote_id)
+        );
+        $this->renderLayout();
+    }
+
+    public function orderFromCmsStep3Action($init_layout = true) {
+        /** @var Transfluent_Translate_Model_Base_Backendclient $translate */
+        $translate = Mage::getModel('transfluenttranslate/base_backendclient');
+        $quote_id = $this->getRequest()->getParam('quote_id');
+        $target = $this->getRequest()->getParam('target');
+        $source = $this->getRequest()->getParam('source');
+        $cookie = Mage::getSingleton('core/cookie');
+        /** @var Mage_Core_Model_Cookie $cookie */
+
+        if ($quote_id && $this->getRequest()->getParam('isAjax')) {
+            $data = $translate->GetCategoryQuote($quote_id);
+            $this->getResponse()
+                ->setBody(
+                    Mage::helper('core')->jsonEncode($data['response']))
+                ->setHttpResponseCode(200)
+                ->setHeader('Content-type', 'application/json', true);
+            return;
+        } else if ($cookie->get('_tf_restore_quote')) {
+            $cookie->delete('_tf_restore_quote', '/');
+            $quote_data = unserialize($cookie->get('_tf_restore_quote'));
+            $quote_id = $quote_data['quote_id'];
+            $target = (int)$quote_data['target'];
+            $source = (int)$quote_data['source'];
+        }
+
+        if ($init_layout) {
+            // Preserve any pre-generated errors
+            $this->_initAction();
+        }
+
+        $translate_blocks = $this->getRequest()->getParam('translate_blocks');
+        $translate_pages = $this->getRequest()->getParam('translate_pages');
+        $all_cms_page_ids = $this->getRequest()->getParam('cms_page_ids') ?: array();
+        $all_cms_block_ids = $this->getRequest()->getParam('cms_block_ids') ?: array();
+
+        if (!$quote_id && (!$translate_blocks || !$translate_pages)) {
+            if (empty($all_cms_page_ids) && empty($all_cms_block_ids)) {
+                $this->orderFromCmsStep2Action(false);
+                return;
+            }
+        }
+
+        $cms_page_model = Mage::getModel('cms/page');
+        if ($translate_pages) {
+            $all_cms_page_ids = $cms_page_model->getCollection()->getAllIds();
+        }
+        $cms_page_ids_str = implode(",", $all_cms_page_ids);
+
+        $cms_block_model = Mage::getModel('cms/block');
+        if ($translate_blocks) {
+            $all_cms_block_ids = $cms_block_model->getCollection()->getAllIds();
+        }
+        $cms_block_ids_str = implode(",", $all_cms_block_ids);
+
+        $source_store = Mage::app()->getStore($source);
+        $target_store = Mage::app()->getStore($target);
+        $level = $this->getRequest()->getParam('level');
+        $collision_strategy = $this->getRequest()->getParam('collision');
+
+        if (!$quote_id) {
+            /** @var Transfluent_Translate_Helper_Languages $languageHelper */
+            $languageHelper = Mage::helper('transfluenttranslate/languages');
+            $source_store_locale_code = $languageHelper->GetStoreLocale($source_store->getCode());
+            $target_store_locale_code = $languageHelper->GetStoreLocale($target_store->getCode());
+            $data = $translate->CreateCmsContentQuote($source, $source_store_locale_code, $target, $target_store_locale_code, $level, $collision_strategy, $cms_page_ids_str, $cms_block_ids_str);
+        }
+
+        $block = $this->getLayout()->createBlock('transfluenttranslate/adminhtml_transfluentorder')->setTemplate('transfluent/order/cms_step3.phtml');
+
+        if (!$quote_id && $data['status'] == 'ERROR') {
+            $block->setData('quote_id', null);
+            $this->getLayout()->getMessagesBlock()->addError($data['error']['message']);
+        } else if (!$quote_id) {
+            $quote_id = $data['response'];
+            $block->setData('quote_id', $quote_id);
+        } else {
+            $block->setData('quote_id', $quote_id);
+        }
+
+        $this->_addContent($block);
+        $this->renderLayout();
+    }
+
+    public function orderFromCmsStep2Action($init_layout = true) {
+        if ($init_layout) {
+            $this->_initAction();
+        }
+
+        $target = $this->getRequest()->getParam('target');
+        if (!$target) {
+            $this->getLayout()->getMessagesBlock()->addError('Please select a target language&store for translations!');
+            $this->orderByCategoryStep1Action(false);
+            return;
+        }
+        $source = $this->getRequest()->getParam('source');
+        if ($source == $target) {
+            $this->getLayout()->getMessagesBlock()->addError('You can not translate into the source store as each store may have only one locale. You need a pair of stores in different languages, please refer our getting started guide for Magento to do that.');
+            $this->orderByCategoryStep1Action(false);
+            return;
+        }
+
+        $this->_addContent(
+            $this
+                ->getLayout()
+                ->createBlock('transfluenttranslate/adminhtml_transfluentorder')
+                ->setTemplate('transfluent/order/cms_step2.phtml')
+        );
+        $this->renderLayout();
+    }
+
+    public function orderFromCmsStep1Action($init_layout = true) {
+        if ($init_layout) {
+            $this->_initAction();
+        }
+
+        if (!Mage::getStoreConfig('transfluenttranslate/account/token')) {
+            $login_url = Mage::helper("adminhtml")->getUrl("adminhtml/system_config/edit", array('section' => 'transfluenttranslate'));
+            $this->getLayout()->getMessagesBlock()->addError('Please login or create an account <a href="' . $login_url . '">first</a>!');
+        }
+        $this->_addContent(
+            $this
+                ->getLayout()
+                ->createBlock('transfluenttranslate/adminhtml_transfluentorder')
+                ->setTemplate('transfluent/order/cms_step1.phtml')
         );
         $this->renderLayout();
     }

@@ -11,6 +11,8 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
         "/store\-([0-9]{1,})\-category\-([0-9]{1,})\-meta\-title/" => '_saveCategoryMetaTitle',
         "/store\-([0-9]{1,})\-category\-([0-9]{1,})\-meta\-keywords/" => '_saveCategoryMetaKeywords',
         "/store\-([0-9]{1,})\-category\-([0-9]{1,})\-meta\-description/" => '_saveCategoryMetaDescription',
+        "/store\-([0-9]{1,})\-([0-9]{1,})\-cms\-page\-([0-9]{1,})\-(.*)/" => '_saveCmsPageDetails',
+        "/store\-([0-9]{1,})\-([0-9]{1,})\-cms\-block\-([0-9]{1,})\-(.*)/" => '_saveCmsBlockDetails',
     );
 
     private function serveRequest($payload) {
@@ -59,6 +61,164 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
         $this->serveRequest($response);
     }
 
+    public function preDispatch() {
+        if ($this->getRequest()->getActionName() == 'returnToQuote') {
+            // Make sure admin session gets initialized before normal dispatch routine, otherwise admin is always logged out
+            Mage::getSingleton('core/session', array('name'=>'adminhtml'));
+        }
+        parent::preDispatch();
+    }
+
+    public function returnToQuoteAction() {
+        $source_store_id = $this->getRequest()->getParam('source_store');
+        $target_store_id = $this->getRequest()->getParam('target_store');
+        $quote_id = $this->getRequest()->getParam('quote_id');
+
+        $mage_admin_url = Mage::getModel('adminhtml/url');
+        /** @var Mage_Adminhtml_Model_Url $mage_admin_url */
+        $mage_admin_url->setStore(0);
+
+        $admin_html_helper = Mage::helper('adminhtml');
+        /** @var Mage_Adminhtml_Helper_Data $admin_html_helper */
+
+        if ($admin_html_helper->getCurrentUserId()) {
+            // LOGGED-IN: REDIRECT TO: BASE + transfluent/adminhtml_transfluentorder/redirectToQuote/quote_id/HkvrSz7z/source_store/1/target_store/4/
+            $quote_order_step3_url = $mage_admin_url->getUrl('transfluent/adminhtml_transfluentorder/redirectToQuote', array('source_store' => $source_store_id, 'target_store' => $target_store_id, 'quote_id' => $quote_id));
+            $this->getResponse()->setRedirect($quote_order_step3_url);
+            return;
+        }
+        // NOT LOGGED IN: SAVE QUOTE DETAILS INTO A COOKIE AND THEN REDIRECT TO PLAIN STEP URL (LOGIN CLEARS ANY REQUEST OR ROUTE PARAMETERS)
+        $cookie = Mage::getSingleton('core/cookie');
+        /** @var Mage_Core_Model_Cookie $cookie */
+        $cookie->set('_tf_restore_quote', serialize(array('source' => $source_store_id, 'target' => $target_store_id, 'quote_id' => $quote_id)), null, '/');
+        $quote_order_step3_url = $mage_admin_url->getUrl('transfluent/adminhtml_transfluentorder/orderFromCmsStep3');
+        $this->getResponse()->setRedirect($quote_order_step3_url);
+    }
+
+    public function getCmsPageAction() {
+        try {
+            $this->_validateToken();
+            $page_id = $this->getRequest()->getParam('page_id');
+            $collision = $this->getRequest()->getParam('collision');
+
+            $target_store_id = $this->getRequest()->getParam('target_store');
+            $source_store_id = $this->getRequest()->getParam('source_store');
+            $cms_page_model = Mage::getModel('cms/page');
+            /** @var Mage_Cms_Model_Page $cms_page_model */
+            $page = $cms_page_model->setStoreId($source_store_id)->load($page_id);
+            /** @var Mage_Cms_Model_Page $page */
+            if ($page->isEmpty() || $page->isObjectNew()) {
+                throw new Exception('PAGE_NOT_ASSOCIATED_WITH_STORE');
+            }
+
+            if ($collision != 'overwrite') {
+                $cms_page_collection = $cms_page_model->getCollection();
+                /** @var Mage_Cms_Model_Resource_Page_Collection $cms_page_collection */
+                $cms_page_collection->addFilter('identifier', $page->getIdentifier());
+                if ($cms_page_collection->count() != 1) {
+                    $tmp_cms_page_model = Mage::getModel('cms/page');
+                    /** @var Mage_Cms_Model_Page $cms_page_model */
+                    foreach ($cms_page_collection AS $tmp_page) {
+                        /** @var Mage_Cms_Model_Page $tmp_page */
+                        $tmp_page = $tmp_cms_page_model->setStoreId($target_store_id)->load($tmp_page->getId());
+                        if ($tmp_page->isObjectNew() || $tmp_page->isEmpty() || $tmp_page->getId() == $page->getId()) {
+                            continue;
+                        }
+                        switch ($collision) {
+                            case 'source':
+                                // Use page in target store as source for translation
+                                // ..page is bound to target store view, use as source!
+                                $page = $tmp_page;
+                                break 2;
+                            default:
+                            case 'translated':
+                                // Assume page is already translated [if it has been bound to target store view]
+                                throw new Exception('PAGE_ALREADY_TRANSLATED');
+                        }
+                    }
+                }
+            }
+
+            $page_url = Mage::app()->getStore($source_store_id)->getUrl($page->getIdentifier());
+            $response = array(
+                'id' => $page_id,
+                'source_id' => $page->getId(),
+                'is_active' => $page->getIsActive(),
+                'title' => $page->getTitle(),
+                'meta' => array(
+                    'keywords' => $page->getMetaKeywords(),
+                    'description' => $page->getMetaDescription(),
+                ),
+                'identifier' => $page->getIdentifier(),
+                'url' => $page_url,
+                'content' => $page->getContent(),
+                'store_id' => $page->store_id
+            );
+        } catch (Exception $e) {
+            $response = $e;
+        }
+        $this->serveRequest($response);
+    }
+
+    public function getCmsBlockAction() {
+        try {
+            $this->_validateToken();
+            $block_id = $this->getRequest()->getParam('block_id');
+            $collision = $this->getRequest()->getParam('collision');
+
+            $target_store_id = $this->getRequest()->getParam('target_store');
+            $source_store_id = $this->getRequest()->getParam('source_store');
+            $cms_block_model = Mage::getModel('cms/block');
+            /** @var Mage_Cms_Model_Block $cms_block_model */
+            $block = $cms_block_model->setStoreId($source_store_id)->load($block_id);
+            /** @var Mage_Cms_Model_Block $block */
+            if ($block->isEmpty() || $block->isObjectNew()) {
+                throw new Exception('BLOCK_NOT_ASSOCIATED_WITH_STORE');
+            }
+
+            if ($collision != 'overwrite') {
+                $cms_block_collection = $cms_block_model->getCollection();
+                /** @var Mage_Cms_Model_Resource_Block_Collection $cms_block_collection */
+                $cms_block_collection->addFilter('identifier', $block->getIdentifier());
+                if ($cms_block_collection->count() != 1) {
+                    $tmp_cms_block_model = Mage::getModel('cms/block');
+                    /** @var Mage_Cms_Model_Block $cms_block_model */
+                    foreach ($cms_block_collection AS $tmp_block) {
+                        /** @var Mage_Cms_Model_Block $tmp_block */
+                        $tmp_block = $tmp_cms_block_model->setStoreId($target_store_id)->load($tmp_block->getId());
+                        if ($tmp_block->isObjectNew() || $tmp_block->isEmpty() || $tmp_block->getId() == $block->getId()) {
+                            continue;
+                        }
+                        switch ($collision) {
+                            case 'source':
+                                // Use block in target store as source for translation
+                                // ..block is bound to target store view, use as source!
+                                $block = $tmp_block;
+                                break 2;
+                            default:
+                            case 'translated':
+                                // Assume block is already translated [if it has been bound to target store view]
+                                throw new Exception('BLOCK_ALREADY_TRANSLATED');
+                        }
+                    }
+                }
+            }
+
+            $response = array(
+                'id' => $block_id,
+                'source_id' => $block->getId(),
+                'is_active' => $block->getIsActive(),
+                'title' => $block->getTitle(),
+                'identifier' => $block->getIdentifier(),
+                'content' => $block->getContent(),
+                'store_id' => $block->store_id
+            );
+        } catch (Exception $e) {
+            $response = $e;
+        }
+        $this->serveRequest($response);
+    }
+
     public function getProductDetailsAction() {
         try {
             $this->_validateToken();
@@ -70,13 +230,18 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
             $target_store_id = $this->getRequest()->getParam('target_store');
             $source_store_id = $this->getRequest()->getParam('source_store');
             $product_model = Mage::getModel('catalog/product');
-            /** @var Mage_Catalog_Model_Product $model */
+            /** @var Mage_Catalog_Model_Product $product_model */
+            $master_product = Mage::getModel('catalog/product');
+            /** @var Mage_Catalog_Model_Product $product_model */
 
             $available_fields = array();
             $products_out = array();
             foreach ($product_ids AS $product_id) {
                 $product = $product_model->setStoreId($target_store_id)->load($product_id);
-                if (!$product) {
+                /** @var Mage_Catalog_Model_Product $product */
+                $master_product = $master_product->setStoreId($source_store_id)->load($product_id);
+                /** @var Mage_Catalog_Model_Product $master_product */
+                if (!$product) { // should be $product->isObjectNew() || $product->isEmpty() ?
                     continue;
                 }
                 /** @var Mage_Catalog_Model_Product $product */
@@ -92,13 +257,14 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
                             continue;
                         } else if ($collision == 'overwrite') {
                             // Delete: Overwrite store specific values with new translations
-                            $master_product = $product_model->setStoreId($source_store_id)->load($product_id);
                             $product_data[$product_field] = $master_product->getData($product_field);
                             continue;
                         }
                     }
                     $product_data[$product_field] = $product->getData($product_field);
                 }
+                $product_data['exists'] = !$master_product->isObjectNew();
+                $product_data['url'] = $master_product->getUrlInStore();
                 $products_out[] = $product_data;
             }
 
@@ -440,6 +606,194 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
 
         Mage::app()->cleanCache(array(Mage_Core_Model_Translate::CACHE_TAG));
         return $this->_updateOrder($store_id, $text_id, $payload['level']);
+    }
+
+    private function _saveCmsBlockDetails($matches, $payload, $text_id) {
+        $source_store_id = $matches[1];
+        $target_store_id = $matches[2];
+        $cms_block_id = $matches[3];
+        $field_name = $matches[4];
+
+        $cms_block_model = Mage::getModel('cms/block');
+        /** @var Mage_Cms_Model_Block $cms_block_model */
+        $block = $cms_block_model->setStoreId($source_store_id)->load($cms_block_id);
+        /** @var Mage_Cms_Model_Block $block */
+        if ($block->isEmpty() || $block->isObjectNew()) {
+            throw new Exception('SOURCE_BLOCK_NOT_FOUND');
+        }
+        $new_store_ids = null;
+        if (in_array("0", $block->store_id)) {
+            // Block visibility is "0", i.e. all stores
+            $all_store_ids = array();
+            $websites = Mage::app()->getWebsites();
+            foreach ($websites AS $website) {
+                /** @var Mage_Core_Model_Website $website */
+                $stores = $website->getStores();
+                foreach ($stores AS $store) {
+                    /** @var Mage_Core_Model_Store $store */
+                    if ($store->getId() == $target_store_id) {
+                        continue;
+                    }
+                    $all_store_ids[] = $store->getId();
+                }
+            }
+            $new_store_ids = $all_store_ids;
+        } else if (in_array((string)$target_store_id, $block->store_id)) {
+            $new_store_ids = array_filter(array_filter($block->store_id, function($value) use ($target_store_id) {
+                if ($value == $target_store_id) {
+                    return null;
+                }
+                return $value;
+            }));
+        }
+        if ($new_store_ids) {
+            $model_data = $block->getData();
+            $model_data['stores'] = $new_store_ids;
+            $block->setData($model_data);
+            try {
+                $block->save();
+            } catch (Exception $e) {
+                throw $e;
+            }
+        }
+
+        $cms_block_collection = $cms_block_model->getCollection();
+        /** @var Mage_Cms_Model_Resource_Block_Collection $cms_block_collection */
+        $cms_block_collection->addFilter('identifier', $block->getIdentifier())->addStoreFilter($target_store_id);
+        if ($cms_block_collection->count() == 0) {
+            $translated_block = Mage::getModel('cms/block');
+            $model_data = $block->getData();
+            unset($model_data['block_id']);
+            $model_data['stores'] = array($target_store_id);
+        } else {
+            $translated_block = $cms_block_collection->fetchItem();
+            if ($translated_block->getId() == $block->getId()) {
+                $translated_block = Mage::getModel('cms/block');
+                $model_data = $block->getData();
+                unset($model_data['block_id']);
+                $model_data['stores'] = array($target_store_id);
+            } else {
+                // Updating an existing item
+                $model_data = $translated_block->getData();
+                if (!isset($model_data['stores']) || empty($model_data['stores'])) {
+                    $model_data['stores'] = array($target_store_id);
+                }
+            }
+        }
+        /** @var Mage_Cms_Model_Block $translated_block */
+        $translated_block->setData($model_data);
+        switch ($field_name) {
+            case 'content':
+                $translated_block->setContent(($payload['text'] ? $payload['text'] : ''));
+                break;
+            case 'title':
+                $translated_block->setTitle(($payload['text'] ? $payload['text'] : ''));
+                break;
+        }
+        try {
+            $translated_block->save();
+        } catch (Exception $e) {
+            throw $e;
+        }
+
+        return true;
+    }
+
+    private function _saveCmsPageDetails($matches, $payload, $text_id) {
+        $source_store_id = $matches[1];
+        $target_store_id = $matches[2];
+        $cms_page_id = $matches[3];
+        $field_name = $matches[4];
+
+        $cms_page_model = Mage::getModel('cms/page');
+        /** @var Mage_Cms_Model_Page $cms_page_model */
+        $page = $cms_page_model->setStoreId($source_store_id)->load($cms_page_id);
+        /** @var Mage_Cms_Model_Page $page */
+        if ($page->isEmpty() || $page->isObjectNew()) {
+            throw new Exception('SOURCE_PAGE_NOT_FOUND');
+        }
+        $new_store_ids = null;
+        if (in_array("0", $page->store_id)) {
+            // Block visibility is "0", i.e. all stores
+            $all_store_ids = array();
+            $websites = Mage::app()->getWebsites();
+            foreach ($websites AS $website) {
+                /** @var Mage_Core_Model_Website $website */
+                $stores = $website->getStores();
+                foreach ($stores AS $store) {
+                    /** @var Mage_Core_Model_Store $store */
+                    if ($store->getId() == $target_store_id) {
+                        continue;
+                    }
+                    $all_store_ids[] = $store->getId();
+                }
+            }
+            $new_store_ids = $all_store_ids;
+        } else if (in_array((string)$target_store_id, $page->store_id)) {
+            $new_store_ids = array_filter(array_filter($page->store_id, function($value) use ($target_store_id) {
+                if ($value == $target_store_id) {
+                    return null;
+                }
+                return $value;
+            }));
+        }
+        if ($new_store_ids) {
+            $model_data = $page->getData();
+            $model_data['stores'] = $new_store_ids; // Page model uses store_id somewhere else, check if this is right.. @todo FIXME
+            $page->setData($model_data);
+            try {
+                $page->save();
+            } catch (Exception $e) {
+                throw $e;
+            }
+        }
+
+        $cms_page_collection = $cms_page_model->getCollection();
+        /** @var Mage_Cms_Model_Resource_Page_Collection $cms_page_collection */
+        $cms_page_collection->addFilter('identifier', $page->getIdentifier())->addStoreFilter($target_store_id);
+        if ($cms_page_collection->count() == 0) {
+            $translated_page = Mage::getModel('cms/page');
+            $model_data = $page->getData();
+            unset($model_data['page_id']);
+            $model_data['stores'] = array($target_store_id);
+        } else {
+            $translated_page = $cms_page_collection->fetchItem();
+            if ($translated_page->getId() == $page->getId()) {
+                $translated_page = Mage::getModel('cms/page');
+                $model_data = $page->getData();
+                unset($model_data['page_id']);
+                $model_data['stores'] = array($target_store_id);
+            } else {
+                // Updating an existing item
+                $model_data = $translated_page->getData();
+                if (!isset($model_data['stores']) || empty($model_data['stores'])) {
+                    $model_data['stores'] = array($target_store_id);
+                }
+            }
+        }
+        /** @var Mage_Cms_Model_Page $translated_page */
+        $translated_page->setData($model_data);
+        switch ($field_name) {
+            case 'content':
+                $translated_page->setContent(($payload['text'] ? $payload['text'] : ''));
+                break;
+            case 'meta-keywords':
+                $translated_page->setMetaKeywords(($payload['text'] ? $payload['text'] : ''));
+                break;
+            case 'meta-description':
+                $translated_page->setMetaDescription(($payload['text'] ? $payload['text'] : ''));
+                break;
+            case 'title':
+                $translated_page->setTitle(($payload['text'] ? $payload['text'] : ''));
+                break;
+        }
+        try {
+            $translated_page->save();
+        } catch (Exception $e) {
+            throw $e;
+        }
+
+        return true;
     }
 
     private function _saveProductDetails($matches, $payload, $text_id) {

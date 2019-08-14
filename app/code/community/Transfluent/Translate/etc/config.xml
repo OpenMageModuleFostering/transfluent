@@ -2,7 +2,7 @@
 <config>
     <modules>
         <Transfluent_Translate>
-            <version>1.3.2</version>
+            <version>1.4.0</version>
         </Transfluent_Translate>
     </modules>
 
@@ -144,8 +144,14 @@
                 <children>
                     <submenu translate="title" module="transfluenttranslate">
                         <title>Order translations by category</title>
+                        <sort_order>1</sort_order>
                         <action>transfluenttranslate/adminhtml_transfluentorder/orderByCategoryStep1</action>
                     </submenu>
+                    <submenu2 translate="title" module="transfluenttranslate">
+                        <title>Order translations for CMS content</title>
+                        <sort_order>2</sort_order>
+                        <action>transfluenttranslate/adminhtml_transfluentorder/orderFromCmsStep1</action>
+                    </submenu2>
                 </children>
                 <sort_order>71</sort_order>
                 <action>transfluenttranslate/adminhtml_transfluenttranslate</action>

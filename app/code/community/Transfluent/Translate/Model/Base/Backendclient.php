@@ -146,7 +146,7 @@ class Transfluent_Translate_Model_Base_Backendclient extends Mage_Adminhtml_Cont
             $message['message'] = 'You have successfully connected to Transfluent.com';
             $session = Mage::getSingleton('core/session');
             /** @var Mage_Core_Model_Session $session */
-            $session->addSuccess('You have successfully authenticated. If you have not yet activated billing mode for your account, you should do it next  by contacting <a href="mailto:sales@transfluent.com">sales@transfluent.com</a> in order to setup invoicing. Or visit <a href="https://www.transfluent.com/my-account/">your Transfluent account page</a> to setup a credit card charging.');
+            $session->addSuccess('You have successfully authenticated. If you have not yet activated billing mode for your account, you should do it next  by contacting <a href="mailto:sales@transfluent.com">sales@transfluent.com</a> in order to setup invoicing or visit <a href="https://www.transfluent.com/my-account/#/creditcard" target="_blank">your Transfluent account page</a> to setup credit card payments.');
         }
         return $message;
     }
@@ -184,6 +184,10 @@ class Transfluent_Translate_Model_Base_Backendclient extends Mage_Adminhtml_Cont
         return $this->CallApi('magento/quote', self::HTTP_POST, $payload);
     }
 
+    public function OrderCmsQuote($quote_id, $instructions) {
+        return $this->OrderCategoryQuote($quote_id, $instructions);
+    }
+
     public function OrderCategoryQuote($quote_id, $instructions) {
         $payload = array(
             'id' => $quote_id,
@@ -196,14 +200,40 @@ class Transfluent_Translate_Model_Base_Backendclient extends Mage_Adminhtml_Cont
         return $this->CallApi('magento/quote', self::HTTP_POST, $payload);
     }
 
-    public function CreateCategoryQuote($source_store, $source_language, $target_store, $target_language, $level, $collision_strategy, $category_ids, $translate_fields = null) {
+    public function CreateCmsContentQuote($source_store, $source_language, $target_store, $target_language, $level, $collision_strategy, $cms_page_ids, $cms_block_ids) {
         $extension_callback_endpoint = Mage::getUrl('transfluenttranslate/');
         $store_endpoint = Mage::app()->getStore($target_store)->getUrl('transfluenttranslate/'); // returns URL with ?___store=[STORE_CODE]
         $version = Mage::getVersion();
+        $extension_version = Mage::getConfig()->getNode()->modules->Transfluent_Translate->version->__toString();
         $payload = array(
             'magento_ver' => $version,
             'magento_url' => $extension_callback_endpoint,
             'magento_store_url' => $store_endpoint,
+            'extension_ver' => $extension_version,
+            'source_store' => $source_store,
+            'source_language' => $source_language,
+            'target_store' => $target_store,
+            'target_language' => $target_language,
+            'level' => $level,
+            'collision' => $collision_strategy,
+            'cms_page_ids' => '[' . $cms_page_ids . ']',
+            'cms_block_ids' => '[' . $cms_block_ids . ']',
+            'token' => $this->token,
+            'hash' => md5($this->token)
+        );
+        return $this->CallApi('magento/quote', self::HTTP_POST, $payload);
+    }
+
+    public function CreateCategoryQuote($source_store, $source_language, $target_store, $target_language, $level, $collision_strategy, $category_ids, $translate_fields = null) {
+        $extension_callback_endpoint = Mage::getUrl('transfluenttranslate/');
+        $store_endpoint = Mage::app()->getStore($target_store)->getUrl('transfluenttranslate/'); // returns URL with ?___store=[STORE_CODE]
+        $version = Mage::getVersion();
+        $extension_version = Mage::getConfig()->getNode()->modules->Transfluent_Translate->version->__toString();
+        $payload = array(
+            'magento_ver' => $version,
+            'magento_url' => $extension_callback_endpoint,
+            'magento_store_url' => $store_endpoint,
+            'extension_ver' => $extension_version,
             'source_store' => $source_store,
             'source_language' => $source_language,
             'target_store' => $target_store,
@@ -229,7 +259,7 @@ class Transfluent_Translate_Model_Base_Backendclient extends Mage_Adminhtml_Cont
             $this->SaveConfiguration($email, $res['response']['token']);
             $session = Mage::getSingleton('core/session');
             /** @var Mage_Core_Model_Session $session */
-            $session->addSuccess('You have successfully created a new account. We have sent your password to your email. Next you should contact <a href="mailto:sales@transfluent.com">sales@transfluent.com</a> in order to setup invoicing.');
+            $session->addSuccess('You have successfully created a new account. We have sent your password to your email. Next you should contact <a href="mailto:sales@transfluent.com">sales@transfluent.com</a> in order to setup invoicing or visit <a href="https://www.transfluent.com/my-account/#/creditcard" target="_blank">your Transfluent account page</a> to setup credit card payments.');
         }
         return $res;
     }

@@ -40,6 +40,7 @@ class Transfluent_Translate_Adminhtml_TransfluenttranslateController extends Mag
             $this
                 ->getLayout()
                 ->createBlock('transfluenttranslate/adminhtml_transfluenttranslate')
+                ->setTemplate('transfluent/order/listing.phtml')
         );
         $this->renderLayout();
     }

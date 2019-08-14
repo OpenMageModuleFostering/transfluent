@@ -1,0 +1,122 @@
+<?php
+/** @var Transfluent_Translate_Helper_Languages $languageHelper */
+$languageHelper = Mage::helper('transfluenttranslate/languages');
+
+/** @var Transfluent_Translate_Helper_Category $categoryHelper */
+$categoryHelper = Mage::helper('transfluenttranslate/category');
+
+$level = $this->getRequest()->getParam('level');
+$source = $this->getRequest()->getParam('source');
+$target = $this->getRequest()->getParam('target');
+$collision_strategy = $this->getRequest()->getParam('collision');
+$form_submitted = $this->getRequest()->getParam('form_submitted');
+$translate_pages = $this->getRequest()->getParam('translate_pages');
+$translate_blocks = $this->getRequest()->getParam('translate_blocks');
+?>
+
+<div class="content-header">
+    <h3 class="icon-head head-products"><?= $languageHelper->__('Order translations for CMS content') ?></h3>
+</div>
+
+<div style="padding: 1rem; color: #ccc; margin-top: -1rem;">
+    <span style="color: #666;">1. Choose source&amp;target</span> &gt; <strong style="color: black;">2. Choose CMS content</strong> &gt; 3. Get quote &gt; 4. Order!
+</div>
+
+<div class="entry-edit" style="width: 33%; min-width: 550px;">
+    <form action="<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderFromCmsStep3')?>" method="post" id="edit_form"><div><input name="form_key" type="hidden" value="<?=Mage::getSingleton('core/session')->getFormKey()?>"></div><div class="entry-edit-head">
+            <h4 class="icon-head head-edit-form fieldset-legend">Select CMS pages and static blocks to translate</h4>
+            <div class="form-buttons"></div>
+        </div>
+        <div class="fieldset " id="base_fieldset">
+            <input type="hidden" name="source" value="<?=$source?>">
+            <input type="hidden" name="target" value="<?=$target?>">
+            <input type="hidden" name="level" value="<?=$level?>">
+            <input type="hidden" name="form_submitted" value="1">
+            <input type="hidden" name="collision" value="<?=$collision_strategy?>">
+            <div class="hor-scroll">
+                <?php
+                if (!$form_submitted || ($form_submitted && $translate_blocks && $translate_pages)) {
+                    ?>
+                    <div>
+                        <label><input type="checkbox" name="translate_pages" value="1" checked="checked"> Translate <strong>ALL</strong> CMS pages</label><br>
+                        <label><input type="checkbox" name="translate_blocks" value="1" checked="checked"> Translate <strong>ALL</strong> CMS blocks</label>
+                    </div>
+                    <?php
+                } else {
+                    ?>
+                    <table>
+                        <thead style="font-weight: bold;">
+                            <tr><td>Select pages</td><td>Select blocks</td></tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            $cms_block_model = Mage::getModel('cms/block');
+                            /** @var Mage_Cms_Model_Block $cms_block_model */
+                            $cms_block_collection = $cms_block_model->getCollection();
+                            /** @var Mage_Cms_Model_Resource_Block_Collection $cms_block_collection */
+                            $cms_block_collection->addFilter('is_active', 1)->addStoreFilter($source);
+                            $cms_blocks = array();
+                            while($cms_block = $cms_block_collection->fetchItem()) {
+                                /** @var Mage_Cms_Model_Block $cms_block */
+                                if (!$cms_block || $cms_block->isEmpty() || $cms_block->isObjectNew()) {
+                                    break;
+                                }
+                                $cms_block = $cms_block->load($cms_block->getId()); // Load item so "stores" value get set
+                                if (!is_array($cms_block->stores) || (!in_array((string)$source, $cms_block->stores) && !in_array("0", $cms_block->stores))) {
+                                    continue;
+                                }
+                                $cms_blocks[] = array('id' => $cms_block->getId(), 'title' => $cms_block->getTitle(), 'identifier' => $cms_block->getIdentifier());
+                            }
+                            $cms_page_model = Mage::getModel('cms/page');
+                            /** @var Mage_Cms_Model_Page $cms_page_model */
+                            $cms_page_collection = $cms_page_model->getCollection();
+                            /** @var Mage_Cms_Model_Resource_Page_Collection $cms_page_collection */
+                            $cms_page_collection->addFilter('is_active', 1)->addStoreFilter($source);
+                            $cms_pages = array();
+                            while($cms_page = $cms_page_collection->fetchItem()) {
+                                /** @var Mage_Cms_Model_Page $cms_page */
+                                if (!$cms_page || $cms_page->isEmpty() || $cms_page->isObjectNew()) {
+                                    break;
+                                }
+                                $cms_page = $cms_page->load($cms_page->getId()); // Load item so "stores" value get set
+                                if (!is_array($cms_page->store_id) || (!in_array((string)$source, $cms_page->store_id) && !in_array("0", $cms_page->store_id))) {
+                                    continue;
+                                }
+                                $cms_page_url = Mage::app()->getStore($source)->getUrl($cms_page->getIdentifier());
+                                $cms_pages[] = array('id' => $cms_page->getId(), 'title' => $cms_page->getTitle(), 'url' => $cms_page_url);
+                            }
+
+                            while (count($cms_blocks) + count($cms_pages)) {
+                                print '<tr>';
+                                $page_arr = array_shift($cms_pages);
+                                print '<td>';
+                                if ($page_arr) {
+                                    print '<label><input type="checkbox" ' . ($translate_pages ? 'checked="checked"' : '') . ' name="cms_page_ids[]" value="' . $page_arr['id'] . '"> <a href="' . htmlspecialchars($page_arr['url']) . '" target="_blank">' . htmlspecialchars($page_arr['title']) . '</a></label>';
+                                }
+                                print '</td>';
+                                $block_arr = array_shift($cms_blocks);
+                                print '<td>';
+                                if ($block_arr) {
+                                    print '<label><input type="checkbox" ' . ($translate_blocks ? 'checked="checked"' : '') . ' name="cms_block_ids[]" value="' . $block_arr['id'] . '"> ' . htmlspecialchars($block_arr['title']) . ' (' . htmlspecialchars($block_arr['identifier']) . ')</label>';
+                                }
+                                print '</td>';
+                                print '</tr>';
+                            }
+                            ?>
+                        </tbody>
+                    </table>
+                    <?php
+                }
+                ?>
+
+                <div style="margin: 1.5rem 0;">
+                    <button title="Back" type="button" class="scalable back" onclick="$(this).up('form').writeAttribute('action', '<?=$this->getUrl('transfluent/adminhtml_transfluentorder/orderFromCmsStep1')?>').submit(); return false;">Back</button>
+                    <button title="Next" type="submit" class="scalable save">Next</button>
+                </div>
+
+                <p>
+                    <i class="link-store-scope"></i> CMS pages and blocks will be translated from selected source store. The translated pages and blocks will be saved with the same identifier but they will be associated with the target store view only.
+                </p>
+            </div>
+        </div>
+    </form></div>
