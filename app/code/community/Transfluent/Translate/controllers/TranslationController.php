@@ -6,6 +6,7 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
         "/store\-([0-9]{1,})\-product\-([0-9]{1,})\-(.*)/" => '_saveProductDetails',
         "/store\-([0-9]{1,})\-attribute\-([0-9]{1,})\-option\-([0-9]{1,})/" => '_saveAttributeOptions',
         "/store\-([0-9]{1,})\-attribute\-([0-9]{1,})/" => '_saveAttributeName',
+        "/store\-([0-9]{1,})\-category\-([0-9]{1,})\-url/" => '_saveCategoryUrl',
         "/store\-([0-9]{1,})\-category\-([0-9]{1,})\-name/" => '_saveCategoryName',
         "/store\-([0-9]{1,})\-category\-([0-9]{1,})\-description/" => '_saveCategoryDescription',
         "/store\-([0-9]{1,})\-category\-([0-9]{1,})\-meta\-title/" => '_saveCategoryMetaTitle',
@@ -286,11 +287,15 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
             $this->_validateToken();
 
             $store = $this->getRequest()->getParam('store');
+            $is_data_requested = $this->getRequest()->getParam('verbose');
             $category_ids_str = $this->getRequest()->getParam('category_ids');
             $category_ids = explode(",", $category_ids_str);
+            if (empty($category_ids_str)) {
+                $category_ids = array(Mage::app()->getStore($store)->getRootCategoryId());
+            }
 
             $categories_out = array();
-            $ExtractCategoryData = function($category_id, $parent_cat_id = null) use (&$ExtractCategoryData, &$categories_out, $store) {
+            $ExtractCategoryData = function($category_id, $parent_cat_id = null) use (&$ExtractCategoryData, &$categories_out, $store, $is_data_requested) {
                 /** @var Mage_Catalog_Model_Category $cat */
                 $cat = Mage::getModel('catalog/category')->setStoreId($store);
                 $cat->load($category_id);
@@ -301,6 +306,23 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
                 );
                 if ($parent_cat_id) {
                     $categories_out[$category_id]['parent_id'] = $parent_cat_id;
+                }
+                if ($is_data_requested) {
+                    $categories_out[$category_id]['id'] = $cat->getId();
+                    $categories_out[$category_id]['url_key'] = $cat->getUrlKey();
+                    $categories_out[$category_id]['url_path'] = $cat->getUrlPath();
+                    $categories_out[$category_id]['description'] = $cat->getDescription();
+                    $categories_out[$category_id]['meta'] = array(
+                        'title' => $cat->getMetaTitle(),
+                        'keywords' => $cat->getMetaKeywords(),
+                        'description' => $cat->getMetaDescription(),
+                    );
+                    $categories_out[$category_id]['display_mode'] = $cat->getDisplayMode();
+                    $categories_out[$category_id]['landing_page'] = $cat->getLandingPage();
+                    $categories_out[$category_id]['active'] = $cat->getIsActive() ? 'yes' : 'no';
+                    if ($is_data_requested === 2) {
+                        $categories_out[$category_id]['raw'] = $cat->getData();
+                    }
                 }
                 $cat_children_ids = $cat->getAllChildren(true);
                 foreach ($cat_children_ids AS $cat_children_id) {
@@ -477,6 +499,20 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
             $category_id,
             $store_id,
             'name',
+            $translated_str,
+            $text_id,
+            $payload);
+    }
+
+    private function _saveCategoryUrl($matches, $payload, $text_id) {
+        $store_id = $matches[1];
+        $category_id = $matches[2];
+
+        $translated_str = trim($payload['text']);
+        return $this->_updateCategoryDetail(
+            $category_id,
+            $store_id,
+            'url_key',
             $translated_str,
             $text_id,
             $payload);

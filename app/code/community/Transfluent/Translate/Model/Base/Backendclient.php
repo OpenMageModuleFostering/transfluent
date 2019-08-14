@@ -127,6 +127,9 @@ class Transfluent_Translate_Model_Base_Backendclient extends Mage_Adminhtml_Cont
 
     public function Authenticate($email, $password) {
         $extension_callback_endpoint = Mage::getUrl('transfluenttranslate/');
+        if (Mage::getStoreConfigFlag('web/url/use_store')) {
+            $extension_callback_endpoint = str_replace(array('admin/', 'transfluenttranslate/'), array('', Mage::app()->getDefaultStoreView()->getCode() . '/transfluenttranslate/'), $extension_callback_endpoint);
+        }
         $version = Mage::getVersion();
         $payload = array('email' => $email, 'password' => $password, 'magento_ver' => $version, 'magento_url' => $extension_callback_endpoint);
         $response = $this->Request(__FUNCTION__, 'POST', $payload);
