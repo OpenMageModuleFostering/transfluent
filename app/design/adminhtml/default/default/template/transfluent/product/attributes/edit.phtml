@@ -39,19 +39,44 @@ if (empty($possible_languages)) {
     return;
 }
 $store_id = $this->getRequest()->getParam('store');
-print '<div style="margin-bottom: 20px;" id="translate_attribute_form">';
+print '<div style="margin-bottom: 20px; display: none;" id="translate_attribute_form">';
 print '<strong>Translate</strong><br>';
 print '<label><input type="checkbox" name="translate_name" id="translate_name" value="1" checked="checked"> attribute name (e.g. Color -&gt; Farbe)</label><br>';
 print '<label><input type="checkbox" name="translate_values" id="translate_values" value="1" checked="checked"> attribute options (e.g. Black -&gt; Schwarz etc.)</label><br>';
 print '<strong>into</strong> ';
+$stores_by_websites = array();
 foreach ($stores AS $store) {
     /** @var Mage_Core_Model_Store $store */
-    $store_language = $helper->GetStoreLocale($store->getCode());
-    print '<label><input type="checkbox" name="translate_to[]" value="' . $store->getId() . '"> ' . $helper->getLanguageNameByCode($store_language, true) . ' (' . $store->getName() . ')</label> ';
+    if (!isset($stores_by_websites[$store->getWebsiteId()])) {
+        $stores_by_websites[$store->getWebsiteId()] = array();
+    }
+    $stores_by_websites[$store->getWebsiteId()][] = $store;
+}
+$current_website = null;
+$current_store_frontend_name = null;
+foreach ($stores_by_websites AS $website_id => $website_stores) {
+    foreach ($website_stores AS $store) {
+        /** @var Mage_Core_Model_Store $store */
+        if (!$current_website || $current_website != $website_id) {
+            $current_website = $website_id;
+            print '<div style="margin-left: 1rem; padding-left: 1rem;">';
+            print '<strong style="margin-left: -1rem;">' . $store->getWebsite()->getName() . ':</strong>';
+        }
+        if (!$current_store_frontend_name || $current_store_frontend_name != $store->getFrontendName()) {
+            print '<br><strong style="margin-left: -0.5rem;"><em>' . $store->getFrontendName() . ':</em></strong><br>';
+            $current_store_frontend_name = $store->getFrontendName();
+        }
+        $store_language = $helper->GetStoreLocale($store->getCode());
+        print '<label><input type="checkbox" name="translate_to[]" value="' . $store->getId() . '"> ' . $store->getName() . ' (' . Mage::getStoreConfig('general/locale/code', $store->getId()) . '; ' . $helper->getLanguageNameByCode(Mage::getStoreConfig('general/locale/code', $store->getId()), true) . ')</label> ';
+    }
+    if (count($website_stores)) {
+        print '</div>';
+    }
 }
 print '<br> <strong>from</strong> ' . $helper->getSourceLanguageSelectHtmlForStores($stores) . ' <strong>using</strong> ' . $helper->getQualityHtml($store_id) . ' <button id="tf_translate_quote" title="Quote" type="button" class="scalable btn-translate" onclick="QuoteTranslation(this); return false;"><span><span><span>Get quote</span></span></span></button><br>';
 print '<div id="tf_translate_form" style="padding: 10px;"></div>';
 print '</div>';
+print '<button id="translate_attribute_form_toggler" title="Show translation form" type="button" class="scalable btn-translate" onclick="$(this).hide(); $(\'translate_attribute_form\').show(); return false;" style="margin-bottom: 2rem;"><span><span><span>Show translation form</span></span></span></button>';
 ?>
 <script type="text/javascript">
     function OrderTranslation(order_btn) {

@@ -77,36 +77,80 @@ EOFJSON;
     }
 
     public function getSourceLanguageSelectHtmlForStores($stores) {
+        $helper = Mage::helper('transfluenttranslate/languages');
+        /** @var Transfluent_Translate_Helper_Languages $helper */
         $default_source_language_id = Mage::getStoreConfig('transfluenttranslate/transfluenttranslate_settings/transfluent_default_language');
         $html = '<select id="translateto" class="translateto_select">';
+        $stores_by_websites = array();
         foreach ($stores AS $store) {
             /** @var Mage_Core_Model_Store $store */
-            $store_language = $this->GetStoreLocale($store->getCode());
-            $language_id = $this->getLangByCode($store_language, true);
-            if (is_null($language_id)) {
-                // Language is unsupported
-                continue;
+            if (!isset($stores_by_websites[$store->getWebsiteId()])) {
+                $stores_by_websites[$store->getWebsiteId()] = array();
             }
-            $is_selected = ($default_source_language_id == $language_id);
-            $html .= '<option value="' . $store->getId() . '"' . ($is_selected ? ' selected="SELECTED"' : '') . '>' . $this->getLanguageNameByCode($store_language, true) . ' (' . $store->getName() . ')</option>';
+            $stores_by_websites[$store->getWebsiteId()][] = $store;
+        }
+        $current_website = null;
+        $current_store_frontend_name = null;
+        foreach ($stores_by_websites AS $website_id => $website_stores) {
+            foreach ($website_stores AS $store) {
+                /** @var Mage_Core_Model_Store $store */
+                $store_language = $this->GetStoreLocale($store->getCode());
+                $language_id = $this->getLangByCode($store_language, true);
+                if (is_null($language_id)) {
+                    // Language is unsupported
+                    continue;
+                }
+                if (!$current_website || $current_website != $website_id) {
+                    $current_website = $website_id;
+                    $html .= '<optgroup label="' . $store->getWebsite()->getName() . '"></optgroup>';
+                }
+                if (!$current_store_frontend_name || $current_store_frontend_name != $store->getFrontendName()) {
+                    $html .= '<optgroup label="&nbsp;&nbsp;' . $store->getFrontendName() . '"></optgroup>';
+                    $current_store_frontend_name = $store->getFrontendName();
+                }
+                $is_selected = ($default_source_language_id == $language_id);
+                $html .= '<option value="' . $store->getId() . '"' . ($is_selected ? ' selected="SELECTED"' : '') . '>&nbsp;&nbsp;&nbsp;&nbsp;' . $store->getName() . ' (' . Mage::getStoreConfig('general/locale/code', $store->getId()) . '; ' . $helper->getLanguageNameByCode(Mage::getStoreConfig('general/locale/code', $store->getId()), true) . ')</option>';
+            }
         }
         $html .= '</select>';
         return $html;
     }
 
     public function getSourceLanguageSelectHtml($stores) {
+        $helper = Mage::helper('transfluenttranslate/languages');
+        /** @var Transfluent_Translate_Helper_Languages $helper */
         $default_source_language_id = Mage::getStoreConfig('transfluenttranslate/transfluenttranslate_settings/transfluent_default_language');
         $html = '<select id="store_language" class="translateto_select">';
+        $stores_by_websites = array();
         foreach ($stores AS $store_id) {
             $store = Mage::app()->getStore($store_id);
-            $language_code = $this->GetStoreLocale($store_id);
-            $language_id = $this->getLangByCode($language_code, true);
-            if (is_null($language_id)) {
-                // Language is unsupported
-                continue;
+            /** @var Mage_Core_Model_Store $store */
+            if (!isset($stores_by_websites[$store->getWebsiteId()])) {
+                $stores_by_websites[$store->getWebsiteId()] = array();
             }
-            $is_selected = ($default_source_language_id == $language_id);
-            $html .= '<option value="' . $store_id . '"' . ($is_selected ? ' selected="SELECTED"' : '') . '>' . $store->getName() . ' (' . $this->getLanguageNameByCode($language_code, true) . ')</option>';
+            $stores_by_websites[$store->getWebsiteId()][] = $store;
+        }
+        $current_website = null;
+        $current_store_frontend_name = null;
+        foreach ($stores_by_websites AS $website_id => $website_stores) {
+            foreach ($website_stores AS $store) {
+                $language_code = $this->GetStoreLocale($store->getId());
+                $language_id = $this->getLangByCode($language_code, true);
+                if (is_null($language_id)) {
+                    // Language is unsupported
+                    continue;
+                }
+                if (!$current_website || $current_website != $website_id) {
+                    $current_website = $website_id;
+                    $html .= '<optgroup label="' . $store->getWebsite()->getName() . '"></optgroup>';
+                }
+                if (!$current_store_frontend_name || $current_store_frontend_name != $store->getFrontendName()) {
+                    $html .= '<optgroup label="&nbsp;&nbsp;' . $store->getFrontendName() . '"></optgroup>';
+                    $current_store_frontend_name = $store->getFrontendName();
+                }
+                $is_selected = ($default_source_language_id == $language_id);
+                $html .= '<option value="' . $store->getId() . '"' . ($is_selected ? ' selected="SELECTED"' : '') . '>&nbsp;&nbsp;&nbsp;&nbsp;' . $store->getName() . ' (' . Mage::getStoreConfig('general/locale/code', $store->getId()) . '; ' . $helper->getLanguageNameByCode(Mage::getStoreConfig('general/locale/code', $store->getId()), true) . ')</option>';
+            }
         }
         $html .= '</select>';
         return $html;
@@ -162,28 +206,40 @@ EOFJSON;
     }
 
     public function getSourceLanguageArray($store_ids, $default_source_language_id = null) {
+        $helper = Mage::helper('transfluenttranslate/languages');
+        /** @var Transfluent_Translate_Helper_Languages $helper */
         $languages = array();
         $selected_language = null;
         $selected_language_store_id = null;
-        foreach ($store_ids as $store_id) {
+        $stores_by_websites = array();
+        foreach ($store_ids AS $store_id) {
             $store = Mage::app()->getStore($store_id);
-            $language_code = $this->GetStoreLocale($store_id);
-            $language_id = $this->getLangByCode($language_code, true);
-            if (is_null($language_id)) {
-                // Language is unsupported
-                continue;
+            /** @var Mage_Core_Model_Store $store */
+            if (!isset($stores_by_websites[$store->getWebsiteId()])) {
+                $stores_by_websites[$store->getWebsiteId()] = array();
             }
-            if (!$selected_language && $language_id == $default_source_language_id) {
-                $selected_language = $store->getName() . ' (' . $this->getLanguageNameByCode($language_code, true) . ')';
-                $selected_language_store_id = $store->getId();
-                continue;
-            }
-            $languages[(string)$store->getId()] = $store->getName() . ' (' . $this->getLanguageNameByCode($language_code, true) . ')';
+            $stores_by_websites[$store->getWebsiteId()][] = $store;
         }
-        if ($selected_language) {
-            $languages = array_reverse($languages, true);
-            $languages[(string)$selected_language_store_id] = $selected_language;
-            $languages = array_reverse($languages, true);
+        $current_website = null;
+        $current_store_frontend_name = null;
+        foreach ($stores_by_websites AS $website_id => $website_stores) {
+            foreach ($website_stores AS $store) {
+                $language_code = $this->GetStoreLocale($store->getId());
+                $language_id = $this->getLangByCode($language_code, true);
+                if (is_null($language_id)) {
+                    // Language is unsupported
+                    continue;
+                }
+                if (!$current_website || $current_website != $website_id) {
+                    $current_website = $website_id;
+                    $languages['website-' . $store->getWebsite()->getId()] = '' . $store->getWebsite()->getName() . '';
+                }
+                if (!$current_store_frontend_name || $current_store_frontend_name != $store->getFrontendName()) {
+                    $languages['front-' . $store->getId()] = '  ' . $store->getFrontendName() . '';
+                    $current_store_frontend_name = $store->getFrontendName();
+                }
+                $languages[(string)$store->getId()] = '    ' . $store->getName() . ' (' . Mage::getStoreConfig('general/locale/code', $store->getId()) . '; ' . $helper->getLanguageNameByCode(Mage::getStoreConfig('general/locale/code', $store->getId()), true) . ')';
+            }
         }
         return $languages;
     }

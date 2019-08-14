@@ -47,12 +47,17 @@ $collision_strategy = $this->getRequest()->getParam('collision');
                             $website_default_store_id = $website_default_store->getId();
                             unset($website_default_store);
                             $stores = $website->getStores();
+                            $current_store_frontend_name = null;
                             foreach ($stores AS $store) {
                                 /** @var Mage_Core_Model_Store $store */
+                                if (!$current_store_frontend_name || $current_store_frontend_name != $store->getFrontendName()) {
+                                    $website_dropdown_options .= '<optgroup label="&nbsp;&nbsp;' . $store->getFrontendName() . '"></optgroup>';
+                                    $current_store_frontend_name = $store->getFrontendName();
+                                }
                                 $store_locale_code = $languageHelper->GetStoreLocale($store->getCode());
                                 $selected_source = (!$source && $store->getId() == $website_default_store_id || $source == $store->getId());
                                 $selected_target = ($target && $store->getId() == $target);
-                                $website_dropdown_options .= '<option value="' . $store->getId() . '" ' . ($selected_source ? 'SOURCE-SELECTED' : '') . ($selected_target ? 'TARGET-SELECTED' : '') . '>&nbsp;&nbsp;' . htmlspecialchars($store->getName()) . ' (' . $languageHelper->getLanguageNameByCode($store_locale_code, true) . ', ' . $store_locale_code . ')</option>';
+                                $website_dropdown_options .= '<option value="' . $store->getId() . '" ' . ($selected_source ? 'SOURCE-SELECTED' : '') . ($selected_target ? 'TARGET-SELECTED' : '') . '>&nbsp;&nbsp;&nbsp;&nbsp;' . htmlspecialchars($store->getName()) . ' (' . $languageHelper->getLanguageNameByCode($store_locale_code, true) . ', ' . $store_locale_code . ')</option>';
                             }
                         }
                         ?>
@@ -92,7 +97,7 @@ $collision_strategy = $this->getRequest()->getParam('collision');
                         </tbody>
                     </table>
                     <p>
-                        <!-- <i class="link-store-scope"></i> TBD: Some kind of protip goes here! -->
+                        <i class="link-store-scope"></i> This tool allows you to translate all products in selected categories. In last step you may change which product fields to translate. Category information is not included, you need to order translation for those from &quot;Manage Categories&quot; view. Please note that this tool does not utilize advanced translation memory by default. If you would like to get a quote with translation memory enabled, contact <a href="mailto:support@transfluent.com">support@transfluent.com</a>.
                     </p>
                 </div>
             </div>

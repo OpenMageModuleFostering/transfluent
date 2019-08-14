@@ -2,7 +2,7 @@
 <config>
     <modules>
         <Transfluent_Translate>
-            <version>1.4.8</version>
+            <version>1.5.0</version>
         </Transfluent_Translate>
     </modules>
 

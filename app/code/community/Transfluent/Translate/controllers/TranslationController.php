@@ -385,6 +385,7 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
                             'base_url' => $store->getBaseUrl(),
                             'name' => $store->getFrontendName(),
                             'active' => $store->getIsActive() ? 'yes' : 'no',
+                            'locale' => Mage::getStoreConfig('general/locale/code', $store->getId()),
                         );
                     }
                 }
