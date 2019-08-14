@@ -1,7 +1,6 @@
 <?php
 
 class Transfluent_Translate_TranslationController extends Mage_Core_Controller_Front_Action {
-//class Transfluent_Translate_TranslationController extends Mage_Adminhtml_Controller_Action { // @todo: Check..
     private $_handlers = array(
         "/store\-([0-9]{1,})\-tag\-([0-9]{1,})/" => '_saveTagName',
         "/store\-([0-9]{1,})\-product\-([0-9]{1,})\-(.*)/" => '_saveProductDetails',
@@ -336,6 +335,8 @@ class Transfluent_Translate_TranslationController extends Mage_Core_Controller_F
     public function saveAction() {
         try {
             $this->_validateToken();
+
+            Mage::app()->setCurrentStore(Mage_Core_Model_App::ADMIN_STORE_ID);
 
             list($payload, $text_id) = $this->_parseRequest();
             $status = $this->_handleRequest($text_id, $payload);

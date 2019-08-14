@@ -450,20 +450,6 @@ class Transfluent_Translate_Model_Transfluentorder extends Mage_Core_Model_Abstr
 
         $response = $tf_client->TextsTranslate('Magento', $source_language_id, Mage::helper('core')->jsonEncode(array($target_language_id)), Mage::helper('core')->jsonEncode($text_ids), $context_comment, $callback_url, $level);
         if ($response && @$response['status'] == 'OK') {
-            foreach ($keys_to_order AS $text_id) {
-                $order_model = Mage::getModel('transfluenttranslate/transfluenttranslate');
-                $order_model->setTextId($text_id)
-                    ->setSourceStore($translate_from_store_id)
-                    ->setTargetStore($store_id)
-                    ->setSourceLanguage($source_language_id)
-                    ->setTargetLanguage($target_language_id)
-                    ->setLevel($level)
-                    ->setStatus(1);
-                if (isset($text_hashes[$text_id])) {
-                    $order_model->setSourceTextHash($text_hashes[$text_id]);
-                }
-                $order_model->save();
-            }
             return true;
         }
 
