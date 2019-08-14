@@ -1,0 +1,193 @@
+<?php
+/** @var Mage_Core_Block_Template $this */
+if (!$this->getRequest()->getPost()) {
+    return;
+}
+set_time_limit(0);
+
+$stores = Mage::app()->getStores();
+$level = intval($this->getRequest()->getParam('quality'));
+$store_from_id = intval($this->getRequest()->getParam('store_from'));
+$store_to_id = intval($this->getRequest()->getParam('store_to'));
+$tags = $this->getRequest()->getParam('tag');
+
+$language_helper = Mage::helper('transfluenttranslate/languages');
+/** @var Transfluent_Translate_Helper_Languages $language_helper */
+?>
+
+<script type="text/javascript">
+
+    window.onload = function () {
+        GetQuote();
+    }
+
+    function GetQuote() {
+        new Ajax.Request('<?php echo $this->getUrl('transfluenttranslate/adminhtml_transfluenttranslate/get_tag_quote') ?>', {
+            method: 'post',
+            parameters: {
+                'instructions': $('tf_translate_instructions_txt').getValue(),
+                'store_from_id': '<?= $store_from_id ?>',
+                'store_to_id': '<?= $store_to_id ?>',
+                'level': '<?= $level ?>',
+                'tags[]': <?=json_encode(array_values($tags))?>
+            },
+            onSuccess: function (response) {
+                var text = response.responseText;
+                if (response.responseText.isJSON()) {
+                    var response_obj = response.responseText.evalJSON();
+                    if ("success" == response_obj.status) {
+                        updateQuoteForm(response_obj);
+                    } else if ("error" == response_obj.status) {
+                        document.getElementById("tf_translate_get_quote_error_msg").value = response_obj.message;
+                        showElementById('tf_translate_form_msg');
+                        showElementById('tf_translate_get_quote_error');
+                    }
+                }
+            },
+            onError: function (response) {
+                alert('Failed to place order. Please try again!');
+                console.log(response.responseText);
+            }
+        });
+    }
+</script>
+
+<div id="tag-translation-form" style="margin-bottom: 20px;">
+    <div class="content-header">
+        <h3 class="icon-head head-products">Translations</h3>
+    </div>
+
+    <div id='tf_translate_form_msg' style="display: none">
+        <div id="tf_translate_get_quote_error"
+             style="padding: 10px; display: none">
+            <div class="notification-global" style="padding: 10px;">
+                <div id="tf_translate_get_quote_error_msg"
+                     style="padding:20px;">
+                </div>
+            </div>
+            <br><br>
+            <button title="OK" type="button" class="scalable back"
+                    onclick="ResetEstimation();" style="">
+            <span>
+                <span>
+                    <span>OK</span>
+                </span>
+            </span>
+            </button>
+        </div>
+        <div id="tf_translate_order_result_success_msg"
+             style="padding: 10px; display: none">
+            <div class="success-msg" id="tf_translate_order_result_success_msg"
+                 style="padding: 10px;">
+                <span id="tf_translate_order_result_success_msg_caption"
+                      style="padding: 20px;">
+                    Thank you for the order!
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div id="tf_translate_form" style="padding: 10px; display: none">
+        <div id="tf_translate_form_cost_msg" style="display: none">
+            Tags contain
+            <span id="tf_translate_quote_words_count"></span>
+            words to translate. Translation costs
+            <span id="tf_translate_quote_cost"></span> <span
+                id="tf_translate_quote_currency"></span>
+            <br>
+            - <a href="#"
+                 onclick="$('tf_translate_form_instructions_box').toggle(); return false;">Instructions</a><br>
+        </div>
+        <div id="tf_translate_form_instructions_box" style="display: none;">
+            <textarea id="tf_translate_instructions_txt" name="instructions"
+                      cols=60 rows=4>
+            </textarea>
+            <br>
+        </div>
+
+        <br>
+    <span id="quote_action_buttons_container">
+        <button title="Order" type="button" id="tf_place_order_btn"
+                class="scalable save"
+                onclick="OrderTranslation(this); return false;">
+            <span>
+                Order translation
+            </span>
+        </button>
+        <button title="Cancel" type="button" class="scalable cancel"
+                onclick="ResetEstimation();" style="">
+            <span>
+                Cancel
+            </span>
+        </button>
+    </span>
+    </div>
+
+
+    <script type="text/javascript">
+
+        function ResetEstimation() {
+            $('tag-translation-form').hide();
+        }
+
+        /**
+         * update quote form by json object got from get_quote back-end
+         * @param obj
+         */
+        function updateQuoteForm(obj) {
+
+            showElementById('tf_translate_form');
+
+            // update and show price and wordcount
+            if (typeof(obj.cost) !== 'undefined' && typeof(obj.currency) !== 'undefined' && typeof(obj.wordCount) !== 'undefined') {
+                document.getElementById('tf_translate_quote_words_count').innerHTML = obj.wordCount;
+                document.getElementById('tf_translate_quote_currency').innerHTML = obj.currency;
+                document.getElementById('tf_translate_quote_cost').innerHTML = obj.cost;
+                showElementById('tf_translate_form_cost_msg');
+                hideElementById('tf_translate_form_msg');
+            } else {
+                hideElementById('tf_translate_form_cost_msg');
+            }
+
+            // update and show instruction box
+            if (typeof(obj.instruction) !== 'undefined') {
+                document.getElementById('tf_translate_instructions_txt').innerHTML = obj.instruction;
+                showElementById('tf_translate_form_instructions_box');
+            }
+        }
+
+        function OrderTranslation(order_btn) {
+            $(order_btn).disable();
+            new Ajax.Request('<?php echo $this->getUrl('transfluenttranslate/adminhtml_transfluentorder/tag_order') ?>', {
+                method: 'post',
+                parameters: {
+                    'instructions': $('tf_translate_instructions_txt').getValue(),
+                    'from_store': '<?=htmlspecialchars($store_from_id)?>',
+                    'to_store': '<?=htmlspecialchars($store_to_id)?>',
+                    'level': '<?=htmlspecialchars($level)?>',
+                    'tags[]': <?=json_encode(array_values($tags))?>
+                },
+                onSuccess: function (response) {
+                    var text = response.responseText;
+                    if (response.responseText.isJSON()) {
+                        var response_obj = response.responseText.evalJSON();
+                        hideElementById('tf_translate_form');
+                        showElementById('tf_translate_form_msg');
+                        if ("success" == response_obj.status) {
+                            showElementById('tf_translate_order_result_success_msg');
+                            hideElementById('tf_translate_order_result_error_msg');
+                        } else if ("error" == response_obj.status) {
+                            showElementById('tf_translate_order_result_error_msg');
+                            hideElementById('tf_translate_order_result_success_msg');
+                            $('tf_translate_get_quote_error_msg').update(response_obj.message);
+                        }
+                    }
+
+                },
+                onError: function (response) {
+                    alert('Failed to place order. Please try again!');
+                    console.log(response.responseText);
+                }
+            });
+        }
+    </script>

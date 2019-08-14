@@ -1,0 +1,151 @@
+<?xml version="1.0"?>
+<config>
+    <tabs>
+        <transfluenttranslate translate="label">
+            <label>Transfluent</label>
+            <sort_order>250</sort_order>
+        </transfluenttranslate>
+    </tabs>
+    <sections>
+        <transfluenttranslate translate="label" module="transfluenttranslate">
+            <label>Transfluent Settings</label>
+            <tab>transfluenttranslate</tab>
+            <frontend_type>text</frontend_type>
+            <sort_order>1</sort_order>
+            <show_in_default>1</show_in_default>
+            <show_in_website>1</show_in_website>
+            <show_in_store>1</show_in_store>
+            <groups>
+                <transfluenttranslate_create translate="label">
+                    <expanded>true</expanded>
+                    <label>Create account</label>
+                    <frontend_class>create_account_tab</frontend_class>
+                    <frontend_type>text</frontend_type>
+                    <sort_order>1</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <fields>
+                        <client_reg translate="label">
+                            <label>Account information</label>
+                            <frontend_model>transfluenttranslate/regform</frontend_model>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>4</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </client_reg>
+                    </fields>
+                </transfluenttranslate_create>
+                <transfluenttranslate_login translate="label">
+                    <expanded>true</expanded>
+                    <label>Authenticate</label>
+                    <frontend_class>login_account_auth</frontend_class>
+                    <frontend_type>text</frontend_type>
+                    <sort_order>2</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <fields>
+                        <client_login translate="label">
+                            <label>Account information</label>
+                            <frontend_model>transfluenttranslate/loginform</frontend_model>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>5</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </client_login>
+                    </fields>
+                </transfluenttranslate_login>
+                <transfluenttranslate_settings translate="label">
+                    <label>Default settings</label>
+                    <frontend_class>transfluen_default_settings</frontend_class>
+                    <frontend_type>text</frontend_type>
+                    <sort_order>3</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <fields>
+                        <transfluent_default_language translate="label">
+                            <label>Default source language</label>
+                            <source_model>transfluenttranslate/config_source_language</source_model>
+                            <frontend_type>select</frontend_type>
+                            <sort_order>3</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <comment>Translate from language</comment>
+                        </transfluent_default_language>
+                        <transfluent_default_quality translate="label">
+                            <label>Default translator level</label>
+                            <source_model>transfluenttranslate/config_source_quality</source_model>
+                            <frontend_type>select</frontend_type>
+                            <sort_order>2</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </transfluent_default_quality>
+                        <transfluent_instructions translate="label">
+                            <label>Default instructions</label>
+                            <frontend_type>textarea</frontend_type>
+                            <sort_order>1</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                            <comment><![CDATA[Instructions will be sent to translator accompanied with product page link. <span class="notice">Remember to click on <strong>Save Config</strong> after changes!</span>]]></comment>
+                        </transfluent_instructions>
+                    </fields>
+                </transfluenttranslate_settings>
+                <transfluenttranslate_help translate="label">
+                    <expanded>true</expanded>
+                    <label>Help &amp; Support</label>
+                    <frontend_class>transfluent_help_support</frontend_class>
+                    <frontend_type>text</frontend_type>
+                    <sort_order>4</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <comment><![CDATA[<img src="http://cdn.transfluent.com/transfluent.com/gfx/transfluent-logo_v3.png"><br>
+                        <strong>Support:</strong> <a href="support@transfluent.com">support@transfluent.com</a><br>
+                        <strong>Extension version:</strong> 1.1.5<br>
+                        <strong>Extension homepage:</strong> <a href="http://www.transfluent.com/products/magento/">transfluent.com/products/magento</a>
+                    ]]></comment>
+                    <fields>
+                        <run translate="label">
+                            <label>Help</label>
+                            <frontend_type>text</frontend_type>
+                            <frontend_model>transfluenttranslate/help</frontend_model>
+                            <sort_order>1</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </run>
+                    </fields>
+                </transfluenttranslate_help>
+                <![CDATA[
+                <transfluenttranslate_translate_all_products translate="label">
+                    <label>Estimate costs and translate all products</label>
+                    <frontend_class>translate_products</frontend_class>
+                    <frontend_type>text</frontend_type>
+                    <sort_order>4</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <fields>
+                        <client_login translate="label">
+                            <label>Estimate translation costs for all products</label>
+                            <frontend_model>transfluenttranslate/translblock</frontend_model>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>5</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </client_login>
+                    </fields>
+                </transfluenttranslate_translate_all_products>
+                ]]>
+            </groups>
+        </transfluenttranslate>
+    </sections>
+</config>

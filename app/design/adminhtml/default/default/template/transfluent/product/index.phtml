@@ -1,0 +1,190 @@
+<?php
+$request = Mage::app()->getRequest();
+if (!$request->isPost()) {
+    return;
+}
+set_time_limit(0);
+$language_helper = Mage::helper('transfluenttranslate/languages');
+/** @var Transfluent_Translate_Helper_Languages $language_helper */
+?>
+<div id="tf_translate_form" style="margin-bottom: 20px;">
+    <div class="content-header">
+        <h3 class="icon-head head-products"><?= $language_helper->__('Translations') ?></h3>
+    </div>
+    <?php
+    /** @var Mage_Core_Block_Template $this */
+    if (!$this->getRequest()->getParam('store')) {
+    ?>
+    <ul class="messages" style="margin-bottom: 20px;">
+        <li class="notice-msg"><?php echo $this->__('You are viewing default/website values. Please select a store view (from left) to see translation options.') ?></li>
+    </ul>
+</div><?php
+return;
+}
+$stores = Mage::app()->getStores();
+if (!$stores || count($stores) < 2) {
+    ?>
+    <div class="notification-global"
+         style="margin-bottom: 20px;"><?php echo $this->__('Please configure at least two store views.') ?></div></div><?php
+    return;
+}
+$possible_source_languages = array();
+foreach ($stores AS $store) {
+    /** @var Mage_Core_Model_Store $store */
+    if ($this->getRequest()->getParam('store') == $store->getId()) {
+        continue;
+    }
+    $possible_source_languages[] = $store->getId();
+}
+if (empty($possible_source_languages)) {
+    ?>
+    <div class="notification-global"
+         style="margin-bottom: 20px;"><?php echo $this->__('Please configure at least two store views with different locales.') ?></div></div><?php
+    return;
+}
+
+$force_translate = $this->getRequest()->getParam('force_translate');
+$level = $this->getRequest()->getParam('level');
+$store_from_id = $this->getRequest()->getParam('translate_from');
+$store_to_id = $this->getRequest()->getParam('translate_store');
+$source_language = $language_helper->GetStoreLocale($store_from_id);
+$source_language_id = $language_helper->getLangByCode($source_language, true);
+
+$products = $this->getRequest()->getParam('product');
+$fields_to_translate_in = $this->getRequest()->getParam('fields_to_translate');
+$translate_fields = array();
+if (empty($fields_to_translate_in)) {
+    foreach ($language_helper->DefaultProductFieldsToTranslate() AS $default_field_to_translate) {
+        $translate_fields[] = $default_field_to_translate;
+    }
+} else {
+    $translate_fields = $fields_to_translate_in;
+}
+?>
+
+<script type="text/javascript">
+    function OrderTranslation(order_btn) {
+        $(order_btn).disable();
+        new Ajax.Request('<?=$this->getUrl('transfluenttranslate/adminhtml_transfluentorder/grid_order')?>', {
+            method: 'post',
+            parameters: {
+                'translate_from': '<?=$store_from_id?>',
+                'store_to': '<?=$store_to_id?>',
+                'level': '<?=$level?>',
+                'force_translate': ($('force_translate') ? $('force_translate').getValue() : 0),
+                'products[]': <?=Mage::helper('core')->jsonEncode($products)?>,
+                'instructions': $('tf_translate_instructions_txt').getValue(),
+                'fields_to_translate[]': $('fields_to_translate').getValue()
+            },
+            onSuccess: function (response) {
+                window.location.href = '<?=$this->getUrl('adminhtml/catalog_product', array('store' => $store_to_id))?>';
+                return;
+            },
+            onError: function (response) {
+                window.location.href = '<?=$this->getUrl('adminhtml/catalog_product', array('store' => $store_to_id))?>';
+                return;
+            }
+        });
+    }
+    function ResetEstimation() {
+        $('tf_translate_quote').enable().show();
+        $('tf_translate_form').update('');
+    }
+</script>
+
+<?php
+
+$tf_client = Mage::getModel('transfluenttranslate/base_backendclient');
+/** @var Transfluent_Translate_Model_Base_Backendclient $tf_client */
+
+$text = '';
+foreach ($products as $product_id) {
+    $product = Mage::getModel('catalog/product')->setStoreId($store_from_id)->load($product_id);
+    /** @var Mage_Catalog_Model_Product $product */
+    if (!$product) {
+        continue;
+    }
+    $translated_product = Mage::getModel('catalog/product')->setStoreId($store_to_id)->load($product->getId());
+    /** @var Mage_Catalog_Model_Product $translated_product */
+
+    foreach ($translate_fields AS $translate_field) {
+        if (!$force_translate && $translated_product->getExistsStoreValueFlag($translate_field)) {
+            continue;
+        }
+        $text .= $product->getData($translate_field) . PHP_EOL;
+    }
+}
+
+$target_language = $language_helper->GetStoreLocale($store_to_id);
+$target_language_id = $language_helper->getLangByCode($target_language, true);
+$response = $tf_client->FreeTextWordCount($level, $text, $source_language_id, $target_language_id);
+
+if ($response && @$response['status'] == 'OK') {
+    $response = $response['response'];
+    if ($response['count'] == 0) {
+        print 'Details for products contain nothing to translate. Please choose different products or fields to translate and update the quote.<br>';
+    } else {
+        print 'Details for products contain ' . $response['count'] . ' words to translate. Translation costs ' . $response['price']['amount'] . $response['price']['currency'] . '.<br>';
+    }
+    print '<form action="' . Mage::app()->getRequest()->getRequestUri() . '" method="POST">';
+    print '<input type="hidden" name="form_key" value="' . htmlspecialchars(Mage::getSingleton('core/session')->getFormKey()) . '">';
+    print '<input type="hidden" name="level" value="' . htmlspecialchars($level) . '">';
+    print '<input type="hidden" name="translate_from" value="' . htmlspecialchars($store_from_id) . '">';
+    print '<input type="hidden" name="translate_store" value="' . htmlspecialchars($store_to_id) . '">';
+    print '<input type="hidden" name="product" value="' . implode(",", $products) . '">';
+    print '<input type="hidden" name="massaction_prepare_key" value="product">';
+    print ' - <a href="#" onclick="$(\'tf_translate_form_instructions\').toggle(); return false;">Instructions</a><br>';
+    $instructions = $this->getRequest()->getParam('instructions') ? $this->getRequest()->getParam('instructions') : Mage::getStoreConfig('transfluenttranslate/transfluenttranslate_settings/transfluent_instructions', $store_to_id);
+    $instructions = $instructions ? $instructions : '';
+    print '<div id="tf_translate_form_instructions" style="display: none;"><textarea id="tf_translate_instructions_txt" name="instructions" cols=60 rows=4>' . Mage::helper('core')->quoteEscape($instructions) . '</textarea><br></div>';
+    print ' - <a href="#" onclick="$(\'tf_translate_form_fields\').toggle(); return false;">Product details to translate</a><br>';
+    print '<div id="tf_translate_form_fields" style="display: none;">';
+    print '<select multiple onchange="$(\'quote_action_buttons_container\').hide(); $(\'get_new_quote_button\').show();" id="fields_to_translate" name="fields_to_translate[]">';
+    $non_translatable_attributes = array(
+        'weight', 'status', 'tax_class_id', 'visibility', 'news_from_date', 'news_to_date', 'price', 'group_price', 'cost', 'tier_price', 'special_price',
+        'special_from_date', 'special_to_date', 'enable_googlecheckout', 'msrp_enabled', 'msrp_display_actual_price_type', 'msrp', 'thumbnail', 'small_image',
+        'image', 'gallery', 'media_gallery', 'custom_design_from', 'custom_design_to', 'custom_layout_update', 'options_container', 'page_layout', 'is_recurring',
+        'recurring_profile', 'gift_message_available',
+    );
+    foreach ($product->getAttributes() AS $attribute) {
+        /** @var Mage_Catalog_Model_Resource_Eav_Attribute $attribute */
+        if (!$attribute->getIsVisible() || $attribute->isStatic() || $attribute->isDeleted() || $attribute->getIsGlobal()) {
+            continue;
+        }
+        if (in_array($attribute->getName(), $non_translatable_attributes)) {
+            continue;
+        }
+        if ($attribute->usesSource()) {
+            continue;
+        }
+        print '<option value="' . $attribute->getName() . '"' . (in_array($attribute->getName(), $translate_fields) ? ' selected="selected"' : '') . '>' . $attribute->getFrontend()->getLabel() . '</option>';
+    }
+    print '</select>';
+    print '<div class="form-list"><p class="note"><span>Hold down CTRL- (PC) or Command-key (MAC) to select multiple items.</span></p></div>';
+    print '<br></div>';
+    print '<br>';
+    if (empty($translate_fields) || $force_translate || $response['count'] == 0 || $text == '') {
+        print '<div class="form-list"><p><input type="checkbox" id="force_translate" name="force_translate" value="1"' . ($force_translate ? 'checked="CHECKED" ' : '') . ' /> Force translation</p><p class="note"><span>Use this to translate content if you have local changes in the target store</span></p></div>';
+        print '<br>';
+    }
+    print '<span id="quote_action_buttons_container"' . ($response['count'] == 0 ? ' style="display: none;"' : '') . '>';
+    print '<button title="Order" type="button" id="tf_place_order_btn" class="scalable save" onclick="OrderTranslation(this); return false;"><span><span><span>Order translation</span></span></span></button> ';
+    print '<button title="Cancel" type="button" class="scalable cancel" onclick="ResetEstimation();" style=""><span><span><span>Cancel</span></span></span></button>';
+    print '</span><span id="get_new_quote_button"' . ($response['count'] == 0 ? '' : ' style="display: none;"') . '>';
+    print '<button title="Get new quote" type="submit" id="tf_refresh_quote_btn" class="scalable save"><span><span><span>Update quote</span></span></span></button> ';
+    print '</span></form></div>';
+    return;
+} else if ($response && @$response['status'] == 'ERROR') {
+    if ($response && @$response['status'] == 'ERROR' && @$response['error']['type']) {
+        $e = Transfluent_Translate_Exception_Base::create($response['error']['type']);
+        if ($e !== null)
+            $error_msg = $e->getMessage();
+    }
+}
+$error_msg = (isset($error_msg) ? $error_msg : 'An error occurred and costs could not be estimated at the moment. Please try again!');
+print '<div class="notification-global">' . $error_msg . '</div><br>';
+print '<button title="OK" type="button" class="scalable back" onclick="ResetEstimation();" style=""><span><span><span>OK</span></span></span></button>';
+
+
+?>
+</div>

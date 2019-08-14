@@ -1,0 +1,36 @@
+<table cellspacing="0" class="form-list">
+    <colgroup class="label"></colgroup>
+    <colgroup class="value"></colgroup>
+    <tbody>
+    <tr>
+        <td class="label"><label
+                for="transfluent_login_email"><?php echo $this->__('Email') ?></label>
+        </td>
+        <td class="value">
+            <input id="transfluent_login_email" name="transfluent_login_email"
+                   value="" class="input-text" type="text"/>
+        </td>
+    </tr>
+    <tr>
+        <td class="label"><label
+                for="transfluent_login_password"><?php echo $this->__('Password') ?></label>
+        </td>
+        <td class="value">
+            <input id="transfluent_login_password"
+                   name="transfluent_login_password" value="" class="input-text"
+                   type="password"/>
+        </td>
+    </tr>
+    <tr>
+        <td class="label"><label> </label></td>
+        <td class="value">
+            <button id="transfluent_login_button"
+                    title="<?php echo $this->__('Authenticate') ?>"
+                    type="button" class="scalable"
+                    onclick="transfluentAuthenticate()" style="">
+                <span><span><span><?php echo $this->__('Login') ?></span></span></span>
+            </button>
+        </td>
+    </tr>
+    </tbody>
+</table>

@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+
+<layout version="1.1.1">
+    <default>
+        <reference name="head">
+            <action method="addJs"><script>transfluent/lib.js</script></action>
+        </reference>
+    </default>
+    <adminhtml_system_config_edit>
+        <reference name="head">
+            <action method="addJs"><script>transfluent/actions.js</script></action>
+        </reference>
+    </adminhtml_system_config_edit>
+    <transfluenttranslate_transfluenttranslate_estimate>
+        <block type="transfluenttranslate/estimate"  name="root" output="toHtml"  template="transfluent/estimate.phtml"/>
+    </transfluenttranslate_transfluenttranslate_estimate>
+</layout>

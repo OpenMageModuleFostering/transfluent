@@ -1,0 +1,356 @@
+<?php
+$language_helper = Mage::helper('transfluenttranslate/languages');
+/** @var Transfluent_Translate_Helper_Languages $language_helper */
+?>
+<div class="content-header">
+    <h3 class="icon-head head-products"><?= $language_helper->__('Translations') ?></h3>
+</div>
+<?php
+/** @var Mage_Core_Block_Template $this */
+if (!$this->getRequest()->getParam('store')) {
+    ?>
+    <ul class="messages" style="margin-bottom: 20px;">
+    <li class="notice-msg"><?php echo $this->__('You are viewing default/website values. Please select a store view (from left) to see translation options.') ?></li>
+    </ul><?php
+    return;
+}
+$stores = Mage::app()->getStores();
+if (!$stores || count($stores) < 2) {
+    ?>
+    <div class="notification-global"
+         style="margin-bottom: 20px;"><?php echo $this->__('Please configure at least two store views.') ?></div><?php
+    return;
+}
+$possible_source_languages = array();
+foreach ($stores AS $store) {
+    /** @var Mage_Core_Model_Store $store */
+    if ($this->getRequest()->getParam('store') == $store->getId()) {
+        continue;
+    }
+    $possible_source_languages[] = $store->getId();
+}
+if (empty($possible_source_languages)) {
+    ?>
+    <div class="notification-global"
+         style="margin-bottom: 20px;"><?php echo $this->__('Please configure at least two store views with different locales.') ?></div><?php
+    return;
+}
+$request = Mage::app()->getRequest();
+$store_id = $this->getRequest()->getParam('store');
+$current_store = Mage::app()->getStore($store_id);
+?>
+
+<div style="margin-bottom: 20px;">
+    <?php printf(
+        $this->__('Translate product details into %s (%s) from %s using %s'),
+        $current_store->getName(),
+        $language_helper->getLanguageNameByCode($language_helper->GetStoreLocale($store_id), true),
+        $language_helper->getSourceLanguageSelectHtml($possible_source_languages),
+        $language_helper->getQualityHtml($store_id)
+    ) ?>
+    <button id="tf_translate_quote" title="Quote" type="button"
+            class="scalable btn-translate"
+            onclick="QuoteTranslation(this); return false;">
+        <span>
+            <?php echo $this->__('Get quote'); ?>
+        </span>
+    </button>
+    <br>
+
+    <div id="tf_translate_order_result" style="padding: 10px; display: none">
+        <ul class="messages">
+            <li class="success-msg" style="display: none"
+                id="tf_translate_order_result_success_msg">
+                <ul>
+                    <li>
+                        <span
+                            id="tf_translate_order_result_success_msg_caption">
+                            <?php echo $this->__('Thank you for the order!'); ?>
+                        </span>
+                    </li>
+                </ul>
+            </li>
+            <div class="notification-global" style="display: none"
+                 id="tf_translate_order_result_error_msg">
+                <div id="tf_translate_order_result_error_msg_caption">
+                </div>
+            </div>
+        </ul>
+    </div>
+
+    <div id="tf_translate_get_quote_error"
+         style="padding: 10px; display: none">
+        <div class="notification-global">
+            <div id="tf_translate_get_quote_error_msg">
+            </div>
+        </div>
+        <br>
+        <button title="OK" type="button" class="scalable back"
+                onclick="ResetEstimation();" style="">
+            <span>
+                <span>
+                    <span>OK</span>
+                </span>
+            </span>
+        </button>
+    </div>
+
+    <div id="tf_translate_form" style="padding: 10px; display: none">
+        <div id="tf_translate_form_cost_msg" style="display: none">
+            <?php echo $this->__(<<< 'MSG'
+Product details contain <span
+                id="tf_translate_quote_words_count"></span> words to translate.
+            Translation
+            costs <span id="tf_translate_quote_cost"></span><span
+                id="tf_translate_quote_currency"></span>.
+MSG
+                ); ?>
+        </div>
+
+        <br>
+
+        <div id="tf_translate_form_instruction_box" style="display: none">
+            <a href="#"
+               onclick="$('tf_translate_form_instructions').toggle(); return false;">
+                <?php echo $this->__('Instructions'); ?>
+            </a>
+            <br>
+
+            <div id="tf_translate_form_instructions" style="display: none;">
+                <textarea id="tf_translate_instructions_txt" name="instructions"
+                          cols=60 rows=4>
+                </textarea>
+                <br>
+            </div>
+        </div>
+
+        <div id="tf_translate_form_product_attributes" style="display: none">
+            - <a href="#"
+                 onclick="$('tf_translate_form_fields').toggle(); return false;">
+                <?php echo $this->__('Product details to translate'); ?>
+            </a>
+            <br>
+
+            <div id="tf_translate_form_fields" style="display: none;">
+                <select multiple
+                        onchange="$('quote_action_buttons_container').hide(); $('get_new_quote_button').show();"
+                        id="fields_to_translate">
+                </select>
+
+                <div class="form-list">
+                    <p class="note">
+                  <span>
+                    <?php echo $this->__('Hold down CTRL- (PC) or Command-key (MAC) to select multiple items.'); ?>
+                  </span>
+                    </p>
+                </div>
+            </div>
+
+            <br>
+
+            <div id="tf_translate_form_force_translate"
+                 class="form-list" style="display: none">
+                <p>
+                    <input type="checkbox" id="force_translate"
+                           name="force_translate" value='0'/>
+                    Force translation
+                </p>
+
+                <p class="note">
+                    <span>
+                      <?php echo $this->__('Use this to translate content if you have local changes in the target store'); ?>
+                    </span>
+                </p>
+            </div>
+
+        </div>
+        <br>
+        <span id="quote_action_buttons_container">
+          <button title="Order" type="button" id="tf_place_order_btn"
+                  class="scalable save"
+                  onclick="OrderTranslation(this); return false;">
+            <span>
+                Order translation
+            </span>
+          </button>
+
+          <button title="Cancel" type="button" class="scalable cancel"
+                  onclick="ResetEstimation();" style="">
+            <span>
+                Cancel
+            </span>
+          </button>
+        </span>
+        <span id="get_new_quote_button" style="display: none;">
+          <button title="Get new quote" type="button" id="tf_refresh_quote_btn"
+                  class="scalable save"
+                  onclick="QuoteTranslation(this); return false;">
+            <span>
+                Update quote
+            </span>
+          </button>
+
+        </span>
+    </div>
+    <div id="tf_translate_form_no_content" style="display: none">
+        Product details contain nothing to translate. Please choose different
+        product fields to translate and update
+        the quote.
+    </div>
+</div>
+
+
+<script type="text/javascript">
+    function OrderTranslation(order_btn) {
+        $(order_btn).disable();
+
+        var force_translate = 0;
+        if ($('force_translate')) {
+            force_translate = $('force_translate').getValue();
+        }
+        new Ajax.Request('<?php echo $this->getUrl('transfluenttranslate/adminhtml_transfluentorder/order') ?>', {
+            method: 'post',
+            parameters: {
+                'store_from': $('store_language').getValue(),
+                'store_to': '<?=$request->getParam('store')?>',
+                'level': $('tf_translate_level').getValue(),
+                'product_id': '[' + '<?=$request->getParam('id')?>' + ']', // json object should be passed
+                'instructions': $('tf_translate_instructions_txt').getValue(),
+                'force_translate': force_translate,
+                'fields_to_translate[]': $('fields_to_translate').getValue()
+            },
+            onSuccess: function (response) {
+                ResetEstimation();
+                var text = response.responseText;
+                console.log(response.responseText);
+                if (response.responseText.isJSON()) {
+                    var response_obj = response.responseText.evalJSON();
+                    hideElementById('tf_translate_form');
+                    console.log(response_obj);
+                    showElementById('tf_translate_order_result');
+                    if ("success" == response_obj.status) {
+                        showElementById('tf_translate_order_result_success_msg');
+                        hideElementById('tf_translate_order_result_error_msg');
+                    } else if ("error" == response_obj.status) {
+                        showElementById('tf_translate_order_result_error_msg');
+                        hideElementById('tf_translate_order_result_success_msg');
+                        $('tf_translate_order_result_error_msg_caption').update(response_obj.message);
+                    }
+                }
+            },
+            onError: function (response) {
+                alert('Failed to place order. Please try again!');
+                console.log(response.responseText);
+            }
+        });
+    }
+    function ResetEstimation() {
+        $('store_language').enable();
+        $('tf_translate_level').enable();
+        $('tf_translate_quote').enable().show();
+        hideElementById('tf_translate_form');
+        hideElementById('tf_translate_order_result');
+        hideElementById('tf_translate_order_result_error_msg');
+        hideElementById('tf_translate_order_result_success_msg');
+    }
+    /**
+     *
+     */
+    function QuoteTranslation(quote_btn) {
+
+        var fields_to_translate = [];
+        if ($('fields_to_translate')) {
+            fields_to_translate = $('fields_to_translate').getValue();
+        }
+        var force_translate = 0;
+        if ($('force_translate') && $('force_translate').getValue != "") {
+            force_translate = $('force_translate').getValue();
+        }
+
+        var params = {
+            'store_from': $('store_language').getValue(),
+            'store_to': '<?=$request->getParam('store')?>',
+            'level': $('tf_translate_level').getValue(),
+            'force_translate': force_translate,
+            'product_id': '[' + '<?=$request->getParam('id')?>' + ']'
+        };
+
+        if (null != fields_to_translate) {
+            params['fields_to_translate[]'] = fields_to_translate;
+        }
+
+        if ($('tf_translate_instructions_txt')) {
+            params.instructions = $('tf_translate_instructions_txt').getValue();
+        }
+        new Ajax.Request('<?php echo $this->getUrl('transfluenttranslate/adminhtml_transfluenttranslate/get_quote') ?>', {
+            method: 'post',
+            parameters: params,
+            onSuccess: function (response) {
+                $('store_language').disable();
+                $('tf_translate_level').disable();
+                $('tf_translate_quote').hide();
+                var text = response.responseText;
+                if (response.responseText.isJSON()) {
+                    $('quote_action_buttons_container').show();
+                    $('get_new_quote_button').hide();
+                    var response_obj = response.responseText.evalJSON();
+                    if ("success" == response_obj.status) {
+                        showElementById('tf_translate_form');
+                        updateQuoteForm(response_obj);
+                    } else if ("error" == response_obj.status) {
+                        document.getElementById("tf_translate_get_quote_error_msg").value = response_obj.message;
+                        showElementById('tf_translate_get_quote_error');
+                    }
+                }
+            },
+            onError: function () {
+                alert('Failed to estimate costs. Please try again!');
+            }
+        });
+    }
+
+
+    /**
+     * update quote form by json object got from get_quote back-end
+     * @param obj
+     */
+    function updateQuoteForm(obj) {
+
+        // update and show price and wordcount
+        if (typeof(obj.cost) !== 'undefined' && typeof(obj.currency) !== 'undefined' && typeof(obj.wordCount) !== 'undefined') {
+            document.getElementById('tf_translate_quote_words_count').innerHTML = obj.wordCount;
+            document.getElementById('tf_translate_quote_currency').innerHTML = obj.currency;
+            document.getElementById('tf_translate_quote_cost').innerHTML = obj.cost;
+            showElementById('tf_translate_form_cost_msg');
+            hideElementById('tf_translate_form_no_content');
+        } else {
+            hideElementById('tf_translate_form_cost_msg');
+            showElementById('tf_translate_form_no_content');
+        }
+
+        // update and show instruction box
+        if (typeof(obj.instruction) !== 'undefined') {
+            document.getElementById('tf_translate_instructions_txt').innerHTML = obj.instruction;
+            showElementById('tf_translate_form_instruction_box');
+        }
+
+        // generate product attributes
+        if (typeof(obj.productAttributes) !== 'undefined') {
+            document.getElementById('fields_to_translate').innerHTML = buildSelectOptions(obj.productAttributes);
+            showElementById('tf_translate_form_product_attributes');
+        }
+
+        // enable force translate
+        if (obj.translationFields.length == 0 || obj.fieldsAlreadyTranslated != null || obj.forceTranslate == true) {
+            document.getElementById('force_translate').value = 1;
+            if (obj.forceTranslate == true) {
+                document.getElementById('force_translate').checked = true;
+
+            }
+            showElementById('tf_translate_form_force_translate');
+        } else {
+            document.getElementById('force_translate').value = 0;
+        }
+    }
+
+</script>

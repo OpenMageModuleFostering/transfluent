@@ -1,0 +1,36 @@
+<?php
+$est = $this->getEstimate();
+$count = $est['count'];
+$price = $est['price'];
+$currency = $est['currency'];
+$est_all = $est['est_all'];
+$est_suc = $est['est_suc'];
+?>
+<?php if ($est_suc == 0) : ?>
+    <p style="color: #c00;"><?php echo $this->__('Estimation failed. Please try again!') ?></p>
+<?php else  : ?>
+    <?php if ($est_suc < $est_all) : ?>
+        <p style="color: #F57900;"><?php echo $this->__('Some texts was not estimated!') ?></p>
+    <?php else : ?>
+        <p style="color: #4E9A06;"><?php echo $this->__('Estimation was successful!') ?></p>
+        <p><?php echo $this->__('Total word count') ?>: <?php echo $count ?></p>
+        <p><?php echo $this->__('Amount') ?>
+            : <?php echo $price . " " . $currency ?></p>
+        <p>
+            <small><?php echo $this->__('* if you do not want to translate estimated text, please click "Cancel" button!') ?></small>
+        </p>
+    <?php endif; ?>
+    <div>
+        <button id="translate_estimate"
+                title="<?php echo $this->__('Translate estimated text') ?>"
+                type="button" class="scalable" onclick="translateEstimated()">
+            <span><span><span><?php echo $this->__('Translate estimated text') ?></span></span></span>
+        </button>
+        <button id="cancel_estimate" title="<?php echo $this->__('Cancel') ?>"
+                type="button" class="scalable" onclick="cancelEstimated()">
+            <span><span><span><?php echo $this->__('Cancel') ?></span></span></span>
+        </button>
+    </div>
+<?php endif; ?>
+
+<?php $this->clearEstimate(); ?>

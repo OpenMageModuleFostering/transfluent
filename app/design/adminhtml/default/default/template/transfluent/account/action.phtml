@@ -1,0 +1,23 @@
+<script type="text/javascript">
+    //<![CDATA[
+    var transfluentAccount = new TransfluentAccount({
+        cUrl: '<?php echo $this->getUrl('transfluent/adminhtml_account/create', array('key' => $this->getKey('create'))) ?>',
+        aUrl: '<?php echo $this->getUrl('transfluent/adminhtml_account/authenticate', array('key' => $this->getKey('authenticate'))) ?>',
+        lUrl: '<?php echo $this->getUrl('transfluent/adminhtml_account/logout', array('key' => $this->getKey('logout'))) ?>'
+    });
+
+    function transfluentCreate() {
+        transfluentAccount.setCreateData();
+        transfluentAccount.accountCreate();
+    }
+
+    function transfluentAuthenticate() {
+        transfluentAccount.setAuthData();
+        transfluentAccount.accountAuthenticate();
+    }
+
+    function transfluentLogout() {
+        transfluentAccount.accountLogout();
+    }
+    //]]>
+</script>

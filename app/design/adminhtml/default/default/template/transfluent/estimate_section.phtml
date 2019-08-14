@@ -1,0 +1,99 @@
+<?php
+?>
+<div
+    class="notification-global"><?php echo $this->__('Cost estimation will be available in next release.') ?></div><?php
+return;
+/** @var Transfluent_Translate_Block_Estimate $this */
+if (!$this->getRequest()->getParam('store')) {
+    ?>
+    <div
+        class="notification-global"><?php echo $this->__('Please select active store view first.') ?></div><?php
+    return;
+}
+$stores = Mage::app()->getStores();
+if (!$stores || count($stores) < 2) {
+    ?>
+    <div
+        class="notification-global"><?php echo $this->__('Please configure at least two store views.') ?></div><?php
+    return;
+}
+$helper = Mage::helper('transfluenttranslate/languages');
+/** @var Transfluent_Translate_Helper_Languages $helper */
+$possible_source_languages = array();
+foreach ($stores AS $store) {
+    /** @var Mage_Core_Model_Store $store */
+    if ($this->getRequest()->getParam('store') == $store->getCode()) {
+        continue;
+    }
+    // @todo FIXME: Use store_ids instead!
+    $possible_source_languages[] = $helper->GetStoreLocale($store->getCode());
+}
+if (empty($possible_source_languages)) {
+    ?>
+    <div
+        class="notification-global"><?php echo $this->__('Please configure at least two store views with different locales.') ?></div><?php
+    return;
+}
+?>
+<p><?php echo $this->__('Estimate translation costs of all products') ?></p>
+<table cellspacing="0" class="form-list">
+    <colgroup class="label"></colgroup>
+    <colgroup class="value"></colgroup>
+    <colgroup class="value"></colgroup>
+    <tbody>
+    <tr>
+        <td class="label"><?php echo $this->__('Translate into:') ?></td>
+        <td class="value"><?php echo $helper->getLanguageNameByCode($helper->GetStoreLocale($this->getRequest()->getParam('store')), true) ?></td>
+        <td class="scope-label">[STORE VIEW]</td>
+    </tr>
+    <tr>
+        <td class="label"><label
+                for="est_langs"><?php echo $this->__('Translate from:') ?></label>
+        </td>
+        <td class="value"><?php echo $helper->getSourceLanguageSelectHtml($possible_source_languages) ?></td>
+    </tr>
+    <tr>
+        <td class="label"><label
+                for="est_quality"><?php echo $this->__('Translator:') ?></label>
+        </td>
+        <td class="value"
+            id="est_qual"><?php echo Mage::helper('transfluenttranslate/languages')->getQualityHtml($this->getRequest()->getParam('store')) ?></td>
+    </tr>
+    <tr>
+        <td class="label"></td>
+        <td class="value" id="estimation_result">
+            <button id="est_button" title="<?php echo $this->__('Estimate') ?>"
+                    type="button" class="scalable" onclick="estimateAll()">
+                <span><span><span><?php echo $this->__('Estimate') ?></span></span></span>
+            </button>
+        </td>
+        <script type="text/javascript">
+            //<![CDATA[
+            var estimate = new Estimate("<?php echo Mage::app()->getRequest()->getParam('store', 0) ?>", {
+                prepdata: '<?php echo $this->getUrl('transfluent/adminhtml_transfluenttranslate/preparedata') ?>',
+                savedata: '<?php echo $this->getUrl('transfluent/adminhtml_transfluenttranslate/savedata') ?>',
+                pushtext: '<?php echo $this->getUrl('transfluent/adminhtml_transfluenttranslate/pushtext') ?>',
+                esttexts: '<?php echo $this->getUrl('transfluent/adminhtml_transfluenttranslate/estimatetexts') ?>'
+            });
+
+            function estimateAll() {
+                estimate.prepareData();
+            }
+
+            var postEstimate = new PostEstimate({
+                transl: '<?php echo $this->getUrl('transfluent/adminhtml_transfluenttranslate/translateestimated') ?>',
+                cancel: '<?php echo $this->getUrl('transfluent/adminhtml_transfluenttranslate/deleteestimated') ?>'
+            });
+
+            function translateEstimated() {
+                postEstimate.translateEstimated();
+            }
+
+            function cancelEstimated() {
+                postEstimate.cancelEstimated();
+            }
+            //]]>
+        </script>
+    </tr>
+    </tbody>
+</table>

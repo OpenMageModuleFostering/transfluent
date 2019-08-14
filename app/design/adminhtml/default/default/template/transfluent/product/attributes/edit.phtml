@@ -1,0 +1,141 @@
+<?php
+/** @var Mage_Core_Block_Template $this */
+$request = Mage::app()->getRequest();
+$attribute_id = $request->getParam('attribute_id');
+$attribute_model = Mage::getModel('eav/entity_attribute');
+/** @var Mage_Eav_Model_Entity_Attribute $attribute_model */
+$attribute = $attribute_model->load($attribute_id);
+/** @var Mage_Eav_Model_Entity_Attribute $attribute */
+if (!$attribute || !$attribute->getId()) {
+    return;
+}
+if (!$attribute->getIsVisibleOnFront() && !$attribute->getData('is_user_defined')) {
+    // Invisible system attributes (such as "Custom Design") are not translatable
+    return;
+}
+?>
+<div class="content-header">
+    <h3 class="icon-head head-products">Translations</h3>
+</div>
+<?php
+$stores = Mage::app()->getStores();
+if (!$stores || count($stores) < 2) {
+    ?>
+    <div class="notification-global"
+         style="margin-bottom: 20px;"><?php echo $this->__('Please configure at least two store views.') ?></div><?php
+    return;
+}
+$helper = Mage::helper('transfluenttranslate/languages');
+/** @var Transfluent_Translate_Helper_Languages $helper */
+$possible_languages = array();
+foreach ($stores AS $store) {
+    /** @var Mage_Core_Model_Store $store */
+    $possible_languages[] = $helper->GetStoreLocale($store->getCode());
+}
+if (empty($possible_languages)) {
+    ?>
+    <div class="notification-global"
+         style="margin-bottom: 20px;"><?php echo $this->__('Please configure at least two store views with different locales.') ?></div><?php
+    return;
+}
+$store_id = $this->getRequest()->getParam('store');
+print '<div style="margin-bottom: 20px;" id="translate_attribute_form">';
+print '<strong>Translate</strong><br>';
+print '<label><input type="checkbox" name="translate_name" id="translate_name" value="1" checked="checked"> attribute name (e.g. Color -&gt; Farbe)</label><br>';
+print '<label><input type="checkbox" name="translate_values" id="translate_values" value="1" checked="checked"> attribute options (e.g. Black -&gt; Schwarz etc.)</label><br>';
+print '<strong>into</strong> ';
+foreach ($stores AS $store) {
+    /** @var Mage_Core_Model_Store $store */
+    $store_language = $helper->GetStoreLocale($store->getCode());
+    print '<label><input type="checkbox" name="translate_to[]" value="' . $store->getId() . '"> ' . $helper->getLanguageNameByCode($store_language, true) . ' (' . $store->getName() . ')</label> ';
+}
+print '<br> <strong>from</strong> ' . $helper->getSourceLanguageSelectHtmlForStores($stores) . ' <strong>using</strong> ' . $helper->getQualityHtml($store_id) . ' <button id="tf_translate_quote" title="Quote" type="button" class="scalable btn-translate" onclick="QuoteTranslation(this); return false;"><span><span><span>Get quote</span></span></span></button><br>';
+print '<div id="tf_translate_form" style="padding: 10px;"></div>';
+print '</div>';
+?>
+<script type="text/javascript">
+    function OrderTranslation(order_btn) {
+        $(order_btn).disable();
+        var stores = [];
+        $$('#translate_attribute_form input[type="checkbox"][name="translate_to[]"]').each(function (item) {
+            var value = $(item).getValue();
+            if (!value) {
+                return;
+            }
+            stores.push(value);
+        });
+        new Ajax.Request('<?php echo $this->getUrl('transfluenttranslate/adminhtml_transfluentorder/attribute_order') ?>', {
+            method: 'post',
+            parameters: {
+                'instructions': $('tf_translate_instructions_txt').getValue(),
+                'from_store': $('translateto').getValue(),
+                'stores[]': stores,
+                'level': $('tf_translate_level').getValue(),
+                'attribute_id': '<?=$request->getParam('attribute_id')?>',
+                'translate_name': $('translate_name').getValue(),
+                'translate_values': $('translate_values').getValue()
+            },
+            onSuccess: function (response) {
+                ResetEstimation();
+                var text = response.responseText;
+                if (response.responseText.isJSON()) {
+                    var response_obj = response.responseText.evalJSON();
+                    text = response_obj.message;
+                }
+                $('tf_translate_form').update(text);
+            },
+            onError: function (response) {
+                alert('Failed to place order. Please try again!');
+                console.log(response.responseText);
+            }
+        });
+    }
+    function ResetEstimation() {
+        $('translate_attribute_form').select('input').each(function (item) {
+            item.enable();
+        });
+        $('translateto').enable();
+        $('tf_translate_level').enable();
+        $('tf_translate_quote').enable().show();
+        $('tf_translate_form').update('');
+    }
+    function QuoteTranslation(quote_btn) {
+        $(quote_btn).disable();
+        $('translate_attribute_form').select('input').each(function (item) {
+            item.disable();
+        });
+        var stores = [];
+        $$('#translate_attribute_form input[type="checkbox"][name="translate_to[]"]').each(function (item) {
+            var value = $(item).getValue();
+            if (!value) {
+                return;
+            }
+            stores.push(value);
+        });
+        new Ajax.Request('<?php echo $this->getUrl('transfluenttranslate/adminhtml_transfluenttranslate/get_attribute_quote') ?>', {
+            method: 'post',
+            parameters: {
+                'from_store': $('translateto').getValue(),
+                'stores[]': stores,
+                'level': $('tf_translate_level').getValue(),
+                'attribute_id': '<?=$request->getParam('attribute_id')?>',
+                'translate_name': $('translate_name').getValue(),
+                'translate_values': $('translate_values').getValue()
+            },
+            onSuccess: function (response) {
+                $('translateto').disable();
+                $('tf_translate_level').disable();
+                $('tf_translate_quote').hide();
+                var text = response.responseText;
+                if (response.responseText.isJSON()) {
+                    var response_obj = response.responseText.evalJSON();
+                    text = response_obj.message;
+                }
+                $('tf_translate_form').update(text);
+            },
+            onError: function () {
+                alert('Failed to estimate costs. Please try again!');
+            }
+        });
+    }
+</script>

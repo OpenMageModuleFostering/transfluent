@@ -1,0 +1,39 @@
+<table cellspacing="0" class="form-list">
+    <colgroup class="label"></colgroup>
+    <colgroup class="value"></colgroup>
+    <tbody>
+    <tr>
+        <td class="label"><label
+                for="transfluent_create_email"><?php echo $this->__('Email') ?></label>
+        </td>
+        <td class="value">
+            <input id="transfluent_create_email" name="transfluent_create_email"
+                   value="" class="input-text" type="text"/>
+        </td>
+    </tr>
+    <tr>
+        <td class="label"><label
+                for="transfluent_create_terms"><?php echo $this->__('Terms of Service') ?></label>
+        </td>
+        <td class="value">
+            <input id="transfluent_create_terms" name="transfluent_create_terms"
+                   value="" class="" type="checkbox"/>
+
+            <p class="note"><span><?php echo $this->__('Accept the') ?> <a
+                        target="_blank"
+                        href="http://transfluent.com/terms/"><?php echo $this->__('Terms of Service') ?></a>?</span>
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td class="label"><label> </label></td>
+        <td class="value">
+            <button id="transfluent_create_button"
+                    title="<?= $this->__('Register') ?>" type="button"
+                    class="scalable" onclick="transfluentCreate()" style="">
+                <span><span><span><?php echo $this->__('Create account') ?></span></span></span>
+            </button>
+        </td>
+    </tr>
+    </tbody>
+</table>

@@ -1,0 +1,155 @@
+<?xml version="1.0"?>
+<config>
+    <modules>
+        <Transfluent_Translate>
+            <version>1.2.0</version>
+        </Transfluent_Translate>
+    </modules>
+
+    <frontend>
+        <routers>
+            <transfluenttranslate>
+                <use>standard</use>
+
+                <args>
+                    <module>Transfluent_Translate</module>
+                    <frontName>Translate</frontName>
+                </args>
+            </transfluenttranslate>
+        </routers>
+    </frontend>
+
+    <global>
+        <models>
+            <transfluenttranslate>
+                <class>Transfluent_Translate_Model</class>
+                <resourceModel>transfluenttranslate_mysql4</resourceModel>
+            </transfluenttranslate>
+            <transfluenttranslate_mysql4>
+                <class>Transfluent_Translate_Model_Mysql4</class>
+                <entities>
+                    <transfluenttranslate>
+                        <table>transfluenttranslate</table>
+                    </transfluenttranslate>
+                </entities>
+            </transfluenttranslate_mysql4>
+        </models>
+
+        <helpers>
+            <transfluenttranslate>
+                <class>Transfluent_Translate_Helper</class>
+            </transfluenttranslate>
+        </helpers>
+
+        <blocks>
+            <transfluenttranslate>
+                <class>Transfluent_Translate_Block</class>
+            </transfluenttranslate>
+            <adminhtml>
+                <rewrite>
+                    <catalog_product_grid>Transfluent_Translate_Block_Adminhtml_Catalog_Product_Grid</catalog_product_grid>
+                    <tag_tag_grid>Transfluent_Translate_Block_Adminhtml_Tag_Tag_Grid</tag_tag_grid>
+                </rewrite>
+            </adminhtml>
+        </blocks>
+
+        <resources>
+            <transfluenttranslate_setup>
+                <setup>
+                    <module>Transfluent_Translate</module>
+                </setup>
+                <connection>
+                    <use>core_setup</use>
+                </connection>
+            </transfluenttranslate_setup>
+
+            <transfluenttranslate_write>
+                <connection>
+                    <use>core_write</use>
+                </connection>
+            </transfluenttranslate_write>
+            <transfluenttranslate_read>
+                <connection>
+                    <use>core_read</use>
+                </connection>
+            </transfluenttranslate_read>
+        </resources>
+
+        <events>
+            <catalog_product_save_after>
+                <observers>
+                    <transfluent_product_hook>
+                        <type>singelton</type>
+                        <class>transfluenttranslate/observer</class>
+                        <method>hookDispatchSaveProduct</method>
+                    </transfluent_product_hook>
+                </observers>
+            </catalog_product_save_after>
+            <adminhtml_block_html_before>
+                <observers>
+                    <transfluent_product_translate_hook>
+                        <type>singelton</type>
+                        <class>transfluenttranslate/observer</class>
+                        <method>hookDispatchAdminhtmlBlockHtmlBefore</method>
+                    </transfluent_product_translate_hook>
+                </observers>
+            </adminhtml_block_html_before>
+        </events>
+    </global>
+
+    <admin>
+        <routers>
+            <transfluenttranslate>
+                <use>admin</use>
+                <args>
+                    <module>Transfluent_Translate</module>
+                    <frontName>transfluent</frontName>
+                </args>
+            </transfluenttranslate>
+        </routers>
+    </admin>
+
+    <adminhtml>
+        <layout>
+            <updates>
+                <transfluenttranslate>
+                    <file>transfluent.xml</file>
+                </transfluenttranslate>
+            </updates>
+        </layout>
+
+        <acl>
+            <resources>
+                <admin>
+                    <children>
+                        <system>
+                            <children>
+                                <config>
+                                    <children>
+                                        <transfluenttranslate>
+                                            <title>Transfluent translate</title>
+                                        </transfluenttranslate>
+                                    </children>
+                                </config>
+                            </children>
+                        </system>
+                    </children>
+                </admin>
+            </resources>
+        </acl>
+
+        <menu>
+            <transfluenttranslate module="transfluenttranslate">
+                <title>Translations</title>
+                <children>
+                    <submenu translate="title" module="transfluenttranslate">
+                        <title>Order translations by categories</title>
+                        <action>transfluenttranslate/adminhtml_transfluentorder/getquote</action>
+                    </submenu>
+                </children>
+                <sort_order>71</sort_order>
+                <action>transfluenttranslate/adminhtml_transfluenttranslate</action>
+            </transfluenttranslate>
+        </menu>
+    </adminhtml>
+</config>

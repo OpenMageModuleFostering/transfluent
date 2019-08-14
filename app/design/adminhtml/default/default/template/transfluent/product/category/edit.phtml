@@ -1,0 +1,147 @@
+<div class="content-header">
+    <h3 class="icon-head head-products">Translations</h3>
+</div>
+<?php
+/** @var Mage_Core_Block_Template $this */
+$stores = Mage::app()->getStores();
+if (!$stores || count($stores) < 2) {
+    ?>
+    <div class="notification-global"
+         style="margin-bottom: 20px;"><?php echo $this->__('Please configure at least two store views.') ?></div><?php
+    return;
+}
+$helper = Mage::helper('transfluenttranslate/languages');
+/** @var Transfluent_Translate_Helper_Languages $helper */
+$possible_languages = array();
+foreach ($stores AS $store) {
+    /** @var Mage_Core_Model_Store $store */
+    $possible_languages[] = $helper->GetStoreLocale($store->getCode());
+}
+if (empty($possible_languages)) {
+    ?>
+    <div class="notification-global"
+         style="margin-bottom: 20px;"><?php echo $this->__('Please configure at least two store views with different locales.') ?></div><?php
+    return;
+}
+$request = Mage::app()->getRequest();
+$store_id = $this->getRequest()->getParam('store');
+print '<div style="margin-bottom: 20px;" id="translate_attribute_form">';
+print '<strong>Translate</strong><br>';
+print '<label><input type="checkbox" name="translate_name" id="translate_name" value="1" checked="checked"> category name</label><br>';
+print '<label><input type="checkbox" name="translate_desc" id="translate_desc" value="1" checked="checked"> category description</label><br>';
+print '<label><input type="checkbox" name="translate_meta" id="translate_meta" value="1" checked="checked"> category meta title, keywords and description</label><br>';
+print '<label><input type="checkbox" name="translate_subcat" id="translate_subcat" value="1" checked="checked"> translate same properties for all subcategories</label><br>';
+print '<strong>into</strong> ';
+foreach ($stores AS $store) {
+    /** @var Mage_Core_Model_Store $store */
+    $store_language = $helper->GetStoreLocale($store->getCode());
+    print '<label><input type="checkbox" name="translate_to[]" value="' . $store->getId() . '"> ' . $helper->getLanguageNameByCode($store_language, true) . ' (' . $store->getName() . ')</label> ';
+}
+print '<br> <strong>from</strong> ' . $helper->getSourceLanguageSelectHtmlForStores($stores) . ' <strong>using</strong> ' . $helper->getQualityHtml($store_id) . ' <button id="tf_translate_quote" title="Quote" type="button" class="scalable btn-translate" onclick="QuoteTranslation(this); return false;"><span><span><span>Get quote</span></span></span></button><br>';
+print '<div id="tf_translate_form" style="padding: 10px;"></div>';
+print '</div>';
+?>
+<script type="text/javascript">
+    function OrderTranslation(order_btn) {
+        if (!categoryForm) {
+            categoryForm = new varienForm('category_edit_form');
+        }
+        if (!categoryForm.getCategoryId()) {
+            alert('Please save the new category first!');
+            return;
+        }
+        $(order_btn).disable();
+        var stores = [];
+        $$('#translate_attribute_form input[type="checkbox"][name="translate_to[]"]').each(function (item) {
+            var value = $(item).getValue();
+            if (!value) {
+                return;
+            }
+            stores.push(value);
+        });
+        new Ajax.Request('<?php echo $this->getUrl('transfluenttranslate/adminhtml_transfluentorder/category_order') ?>', {
+            method: 'post',
+            parameters: {
+                'instructions': $('tf_translate_instructions_txt').getValue(),
+                'from_store': $('translateto').getValue(),
+                'stores[]': stores,
+                'level': $('tf_translate_level').getValue(),
+                'category_id': categoryForm.getCategoryId(),
+                'translate_name': $('translate_name').getValue(),
+                'translate_desc': $('translate_desc').getValue(),
+                'translate_meta': $('translate_meta').getValue(),
+                'translate_subcat': $('translate_subcat').getValue()
+            },
+            onSuccess: function (response) {
+                ResetEstimation();
+                var text = response.responseText;
+                if (response.responseText.isJSON()) {
+                    var response_obj = response.responseText.evalJSON();
+                    text = response_obj.message;
+                }
+                $('tf_translate_form').update(text);
+            },
+            onError: function (response) {
+                alert('Failed to place order. Please try again!');
+                console.log(response.responseText);
+            }
+        });
+    }
+    function ResetEstimation() {
+        $('translate_attribute_form').select('input').each(function (item) {
+            item.enable();
+        });
+        $('translateto').enable();
+        $('tf_translate_level').enable();
+        $('tf_translate_quote').enable().show();
+        $('tf_translate_form').update('');
+    }
+    function QuoteTranslation(quote_btn) {
+        if (!categoryForm) {
+            categoryForm = new varienForm('category_edit_form');
+        }
+        if (!categoryForm.getCategoryId()) {
+            alert('Please save the new category first!');
+            return;
+        }
+        $(quote_btn).disable();
+        $('translate_attribute_form').select('input').each(function (item) {
+            item.disable();
+        });
+        var stores = [];
+        $$('#translate_attribute_form input[type="checkbox"][name="translate_to[]"]').each(function (item) {
+            var value = $(item).getValue();
+            if (!value) {
+                return;
+            }
+            stores.push(value);
+        });
+        new Ajax.Request('<?php echo $this->getUrl('transfluenttranslate/adminhtml_transfluenttranslate/get_category_quote') ?>', {
+            method: 'post',
+            parameters: {
+                'from_store': $('translateto').getValue(),
+                'stores[]': stores,
+                'level': $('tf_translate_level').getValue(),
+                'category_id': categoryForm.getCategoryId(),
+                'translate_name': $('translate_name').getValue(),
+                'translate_desc': $('translate_desc').getValue(),
+                'translate_meta': $('translate_meta').getValue(),
+                'translate_subcat': $('translate_subcat').getValue()
+            },
+            onSuccess: function (response) {
+                $('translateto').disable();
+                $('tf_translate_level').disable();
+                $('tf_translate_quote').hide();
+                var text = response.responseText;
+                if (response.responseText.isJSON()) {
+                    var response_obj = response.responseText.evalJSON();
+                    text = response_obj.message;
+                }
+                $('tf_translate_form').update(text);
+            },
+            onError: function () {
+                alert('Failed to estimate costs. Please try again!');
+            }
+        });
+    }
+</script>

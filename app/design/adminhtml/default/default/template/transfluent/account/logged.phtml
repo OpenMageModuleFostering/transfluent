@@ -1,0 +1,22 @@
+<table cellspacing="0" class="form-list">
+    <colgroup class="label"></colgroup>
+    <colgroup class="value"></colgroup>
+    <tbody>
+    <tr>
+        <td class="label">
+            <label><?php echo $this->__('Authenticated account') ?></label></td>
+        <td class="value"><?php echo $this->getEmail() ?></td>
+    </tr>
+    <tr>
+        <td class="label"><label> </label></td>
+        <td class="value">
+            <button id="transfluent_logout_button"
+                    title="<?php echo $this->__('Invalidate authentication') ?>"
+                    type="button" class="scalable" onclick="transfluentLogout()"
+                    style="">
+                <span><span><span><?php echo $this->__('Invalidate authentication') ?></span></span></span>
+            </button>
+        </td>
+    </tr>
+    </tbody>
+</table>
